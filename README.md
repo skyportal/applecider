@@ -3,7 +3,11 @@
 </p>
 
 
-`AppleCiDEr` (`App`lying multimoda`l` l`e`arning to `C`lassify trans`i`ent `D`etections `E`a`r`ly): is a multimodal transient classifer that uses photometry, metadata, images and spectra. <i>Name inspired by University of Minnesota's famous [apple program](https://mnhardy.umn.edu/apples).</i> <br>
+
+<p align="center"><i><b><ins>App</ins></b>lying multimoda<ins><b>l</b></ins> l<ins><b>e</ins></b>arning to <ins><b>C</ins></b>lassify trans<b><ins>i</ins></b>ent <b><ins>D</ins></b>etections <b><ins>E</ins></b>a<b><ins>r</ins></b>ly</i></p>
+<p align="center"><i>(repo under construction circa 5/16)</i></p>
+
+`AppleCiDEr` is a multimodal transient classifer that uses photometry, metadata, images and spectra. <i>Name inspired by University of Minnesota's famous [apple program](https://mnhardy.umn.edu/apples).</i> <br>
 
 
 
