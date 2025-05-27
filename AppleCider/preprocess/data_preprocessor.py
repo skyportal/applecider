@@ -22,170 +22,54 @@ from sklearn.utils.class_weight import compute_class_weight
 
 
 
-class AlertProcessor:
-    """ ☆ procces object's alert package ☆ (see arXiv:1902.02227 for more info) """
+class DataPreprocessor:
+    
+    """ ☆ additional pre-processing of photometry, metadata ☆ """
     
     @staticmethod
-    def get_alerts(base_path, obj_id):
-        return np.load(os.path.join(base_path, obj_id, 'alerts.npy'), allow_pickle=True)
+    def Mag2Flux(df):
+        ''' converts magnitude to flux'''
+        df_copy = df.dropna().copy()
+        df_copy['flux'] = 10 ** (-0.4 * (df_copy['mag'] - 23.9))
+        df_copy['flux_error'] = (df_copy['magerr'] / (2.5 / np.log(10))) * df_copy['flux']
+        df_copy = df_copy[['obj_id', 'mjd', 'flux', 'flux_error', 'filter', 'type', 'jd']]
+        return df_copy
+    
+    @staticmethod    
+    def Normalize_mjd(df):
+        ''' normalize modified julian date'''
+        df_copy = df.copy()
+        df_copy['mjd'] = df_copy.groupby('obj_id')['mjd'].transform(lambda x: x - np.min(x))
+        df_copy.reset_index(drop=True, inplace=True)
+        return df_copy
+    
+    @staticmethod
+    def convert_photometry(photo_df):
+        ''' converts magnitude to flux, normalizes modifed Julian date of photometry df '''
+        df_gp_ready = DataPreprocessor.Mag2Flux(photo_df)
+        df_gp_ready = DataPreprocessor.Normalize_mjd(df_gp_ready).drop_duplicates().reset_index(drop=True)
+        return df_gp_ready
 
     @staticmethod
-    def process_image(data, normalize=True):
-        ''' returns processed image as a 63x63 np array '''
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', category=AstropyWarning)
-            warnings.simplefilter('ignore')
-            with gzip.open(io.BytesIO(data), "rb") as f:
-                image = np.nan_to_num(fits.open(io.BytesIO(f.read()), ignore_missing_end=True)[0].data)
-        if normalize:
-            norm = np.linalg.norm(image)
-            if norm != 0:
-                image /= norm
-        return np.pad(image, [(0, 63 - s) for s in image.shape], mode="constant", constant_values=1e-9)[:63, :63]
+    def cut_photometry(photo_df, metadata_df, index, max_mjd=10):    
+        ''' ensure mjd max not exceeded'''
+        jd_current = metadata_df['jd'].iloc[index]
+        photometry_filtered = photo_df[photo_df['jd'] <= jd_current]
+        return None if photometry_filtered['mjd'].max() > max_mjd else photometry_filtered
 
     @staticmethod
-    def process_alert(alert):
-        ''' process metadata, images from alerts '''
-        metadata = alert['candidate']
-        metadata_df = pd.DataFrame([metadata])
-        metadata_df['obj_id'] = alert['objectId']
+    def preprocess_metadata(metadata_df):
+        ''' removes metadata duplicates and irrelevant columns '''
+        metadata_df = metadata_df.drop_duplicates(subset=['jd'], keep='first')
+        metadata_df_copy = metadata_df.copy()
+        metadata_df_copy['nnondet'] = metadata_df_copy['ncovhist'] - metadata_df_copy['ndethist']
 
-        cutout_dict = {
-            cutout: AlertProcessor.process_image(alert[f"cutout{cutout.capitalize()}"]["stampData"])
-            for cutout in ("science", "template", "difference")
-        }
-        assembled_image = np.zeros((63, 63, 3))
-        assembled_image[:, :, 0] = cutout_dict["science"]
-        assembled_image[:, :, 1] = cutout_dict["template"]
-        assembled_image[:, :, 2] = cutout_dict["difference"]
-
-        return metadata_df, assembled_image
-
-
-    @staticmethod
-    def get_process_alerts(obj_id, base_path):
+        columns_metadata = [ "sgscore1", "sgscore2", "distpsnr1", "distpsnr2", "ra", "dec", "nmtchps", "sharpnr", "scorr", "sky",  "diffmaglim",  "ndethist",  "ncovhist", "sigmapsf", "chinr", "magpsf", "nnondet", "classtar", 'jd' ]
         
-        alerts = AlertProcessor.get_alerts(base_path, obj_id)
-        metadata_list = []
-        images = []
-
-        for alert in alerts:
-            metadata_df, image = AlertProcessor.process_alert(alert)
-            metadata_list.append(metadata_df)
-            images.append(image)
-
-        return pd.concat(metadata_list, ignore_index=True), images
-    
-
-    @staticmethod
-    def select_alerts(data, max_alerts=6):
         
-        ''' sample from maximum of XYZ alerts '''
-        def sample_alerts(alerts):
-            num_alerts = len(alerts)
-            if num_alerts <= max_alerts:
-                return alerts
-            selected_alerts = [alerts[0], alerts[-1]]
-            if num_alerts > 2:
-                step = (num_alerts - 2) / (max_alerts - 2)
-                selected_alerts += [alerts[int(step * i + 1)] for i in range(max_alerts - 2)]
-            return selected_alerts
-
-        data_by_obj_id = {}
-        for sample in data:
-            obj_id = sample['obj_id']
-            if obj_id not in data_by_obj_id:
-                data_by_obj_id[obj_id] = []
-            data_by_obj_id[obj_id].append(sample)
-
-        selected_data = []
-        for obj_id, alerts in data_by_obj_id.items():
-            alerts_sorted = sorted(alerts, key=lambda x: x['alerte'])
-            selected_data.extend(sample_alerts(alerts_sorted))
-
-        return selected_data
+        return metadata_df_copy[columns_metadata].fillna(-999.0)
 
 
-
-class PhotometryProcessor:
-    
-    """ ☆ procces object's photometry, metadata """
-    
-    @staticmethod
-    def clean_photometry(df, df_type):
-        ''' cleans photometry dataframe '''
-        df = PhotometryProcessor.clean_dataframe(df)
-        df['type'] = df_type[df_type['obj_id'] == df['obj_id'].iloc[0]]['type'].values[0]
-        df.dropna(subset=['mag', 'magerr'], inplace=True)
-        return df.reset_index(drop=True)
-    
-    @staticmethod
-    def clean_dataframe(df):
-        ''' renames columns, converts jd to MJD  '''
-        df = df.rename(columns={
-            'magpsf': 'mag',
-            'sigmapsf': 'magerr',
-            'fid': 'filter',
-            'scorr': 'snr',
-            'diffmaglim': 'limiting_mag' })
-        df['filter'] = df['filter'].replace({1: 'ztfg', 2: 'ztfr', 3: 'ztfi'})
-        df['mjd'] = df['jd'] - 2400000.5
-        df = df[['obj_id', 'jd', 'mjd', 'mag', 'magerr', 'snr', 'limiting_mag', 'filter']]
-        return df
-
-    @staticmethod
-    def process_csv(object_id, df_bts, base_path):   
-        ''' creates file path for photometry.csv, cleans photometry'''
-        file_path = os.path.join(base_path, object_id, 'photometry.csv')
-        return PhotometryProcessor.clean_photometry(pd.read_csv(file_path), df_bts) if os.path.exists(file_path) else pd.DataFrame()
-
-    @staticmethod
-    def get_first_valid_index(df, min_points=1):
-        '''counts occurences of each filter, finds index that meets minimum number of points in each filter'''
-        filter_counts = {'ztfr': 0, 'ztfg': 0, 'ztfi':0}
-        for i in range(len(df)):
-            current_filter = df['filter'].iloc[i]
-            if current_filter in filter_counts:
-                filter_counts[current_filter] += 1
-                if filter_counts[current_filter] >= min_points:
-                    return i
-        return -1
-
-    @staticmethod
-    def add_metadata_to_photometry(photo_df, metadata_df):
-        ''' cleans "metadata", merges photometry_df with metadata_df'''
-        
-        metadata_df_copy = PhotometryProcessor.clean_dataframe(metadata_df.copy())
-        
-        # ... but first, add new column so we always know the source of each row in df
-        photo_df['source'] = 'photometry.csv'
-        metadata_df_copy['source'] = 'alerts.npy'
-        
-        df = pd.merge(photo_df, metadata_df_copy, on=['obj_id', 'jd', 'mjd', 'mag', 'magerr', 'snr', 'limiting_mag', 'filter', 'source'], how='outer', suffixes=('', '_metadata')) 
-        df = df[['obj_id', 'jd', 'mjd', 'mag', 'magerr', 'snr', 'limiting_mag', 'filter', 'type', 'source']]
-        df['obj_id'] = df['obj_id'].ffill().bfill()
-        df['type'] = df['type'].ffill().bfill()
-        df = df.drop_duplicates(subset=['mjd', 'filter'], keep='first')
-        df = df.sort_values(by=['mjd'])
-        df.reset_index(drop=True, inplace=True)
-        return df
-    
-    def find_valid_alert_index(df):
-        for index, row in df.iterrows():
-            if row['flux_ztfg'] == 0 and row['flux_ztfr'] == 0 and row['flux_ztfi'] == 0:
-                return index - 1
-        
-        return len(df)
-    
-    def normalize_light_curve(df):
-
-        flux_data = df.loc[:len(df), ['flux_ztfg', 'flux_ztfr', 'flux_ztfi']]
-        scaler = StandardScaler() # standardizes by removing mean, scaling to unit variance
-        normalized_flux = scaler.fit_transform(flux_data)
-        df.loc[:len(df), ['flux_ztfg', 'flux_ztfr','flux_ztfi']] = normalized_flux
-  
-        return df
-    
 
 class SpectraProcessor:
     
@@ -434,59 +318,5 @@ class DataSorter:
                 joblib.dump(class_weight_dict, class_weights_path)
                 
     
-        return train_files, val_files, class_weight_dict
-    
-    
-class DataPreprocessor:
-    
-    """ ☆ additional pre-processing of photometry, metadata ☆ """
-    
-    @staticmethod
-    def Mag2Flux(df):
-        ''' converts magnitude to flux'''
-        df_copy = df.dropna().copy()
-        df_copy['flux'] = 10 ** (-0.4 * (df_copy['mag'] - 23.9))
-        df_copy['flux_error'] = (df_copy['magerr'] / (2.5 / np.log(10))) * df_copy['flux']
-        df_copy = df_copy[['obj_id', 'mjd', 'flux', 'flux_error', 'filter', 'type', 'jd']]
-        return df_copy
-    
-    @staticmethod    
-    def Normalize_mjd(df):
-        ''' normalize modified julian date'''
-        df_copy = df.copy()
-        df_copy['mjd'] = df_copy.groupby('obj_id')['mjd'].transform(lambda x: x - np.min(x))
-        df_copy.reset_index(drop=True, inplace=True)
-        return df_copy
-    
-    @staticmethod
-    def convert_photometry(photo_df):
-        ''' converts magnitude to flux, normalizes modifed Julian date of photometry df '''
-        df_gp_ready = DataPreprocessor.Mag2Flux(photo_df)
-        df_gp_ready = DataPreprocessor.Normalize_mjd(df_gp_ready).drop_duplicates().reset_index(drop=True)
-        return df_gp_ready
+        return train_files, val_files, class_weight_dict     
 
-    @staticmethod
-    def cut_photometry(photo_df, metadata_df, index, max_mjd=10):    
-        ''' ensure mjd max not exceeded'''
-        jd_current = metadata_df['jd'].iloc[index]
-        photometry_filtered = photo_df[photo_df['jd'] <= jd_current]
-        return None if photometry_filtered['mjd'].max() > max_mjd else photometry_filtered
-
-    @staticmethod
-    def preprocess_metadata(metadata_df):
-        ''' removes metadata duplicates and irrelevant columns '''
-        metadata_df = metadata_df.drop_duplicates(subset=['jd'], keep='first')
-        # old version
-        #columns_metadata = [ "sgscore1", "sgscore2", "distpsnr1", "distpsnr2", "ra", "dec", "nmtchps", "sharpnr", "scorr", "sky", 'jd' ]
-        
-        # new metadata values / CALC SOME NEW COLUMNS
-        metadata_df_copy = metadata_df.copy()
-        metadata_df_copy['nnondet'] = metadata_df_copy['ncovhist'] - metadata_df_copy['ndethist']
-        
-
-
-        # added: diffmaglim, ndethist, sigmapsf, chinr, magpsf
-        columns_metadata = [ "sgscore1", "sgscore2", "distpsnr1", "distpsnr2", "ra", "dec", "nmtchps", "sharpnr", "scorr", "sky",  "diffmaglim",  "ndethist",  "ncovhist", "sigmapsf", "chinr", "magpsf", "nnondet", "classtar", 'jd' ]
-        
-        
-        return metadata_df_copy[columns_metadata].fillna(-999.0)
