@@ -14,19 +14,27 @@
 <br><br>
 ***
 IP structure:
+
 ```
 AppleCider
 └── core
     ├── dataset.py             # DataGenerator
     ├── model.py               # implement multimodal models. contains: AppleCider (for all modalities), ZwickyCoder (for photo, image, metadata)
-└── models                          # contains individual files for each model     
-    ├── Informer.py                 # photometry model -> 
-    ├── BTSModel.py                 # image model      -> CNN 
-    ├── MetaModel.py                # metadata model   -> perceptron
-    └── GalSpecNet.py               # spectra model    -> CNN
-
+    └── trainer.py             
+└── models                           # collection of models used in AppleCiDEr and baseline models    
+    ├── Informer.py                  # photometry model
+    ├── BTSModel.py                  # image model
+    ├── MetaModel.py                 # metadata model
+    ├── GalSpecNet.py                # spectra model
+    ├── SpectraEfficientNetV2L.py    # spectra model
+    ├── SpectraViTBase.py            # spectra model
+    └── SpectraConvNeXtBase_train.py # spectra model
 └── preprocess
-    ├── data_preprocessor.py     # includes: AlertProcessor, PhotometryProcessor, DataPreprocessor
-    ├── transient_dataset.py     # preprocess all alerts, saves "new" object alerts
+    ├── process.py                   # preprocess script
+    ├── alert_processor.py           # for ZTF alerts
+    ├── photometry_processor.py      # for aux ZTF alerts
+    ├── data_preprocessor.py         # combined ZTF, aux
+    ├── transient_dataset.py         # preprocess dataset, save as "new" object alerts
+
 
 ```
