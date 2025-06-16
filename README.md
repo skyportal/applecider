@@ -16,7 +16,7 @@
 IP structure:
 
 ```
-AppleCider
+AppleCider Architecture 
 └── core
     ├── dataset.py             # DataGenerator
     ├── model.py               # implement multimodal models. contains: AppleCider (for all modalities), ZwickyCoder (for photo, image, metadata)
@@ -35,6 +35,11 @@ AppleCider
     ├── photometry_processor.py      # for aux ZTF alerts
     ├── data_preprocessor.py         # combined ZTF, aux
     ├── transient_dataset.py         # preprocess dataset, save as "new" object alerts
+└── notebooks
+└── files
+    └── cider_BTS.csv  # objects (+ classification) used to train AppleCiDEr that are in the public Bright Transient Survey
+└── logo    # versions of draft logo 
+
 
 
 ```
