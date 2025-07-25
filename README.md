@@ -13,6 +13,9 @@
 
 
 <br><br>
+### ZTF production Pipeline 
+<img align="center" src="https://github.com/skyportal/applecider/blob/main/img/ZTF_Production%20-%20use%20over%20black.png" alt="ZTF production diagram" height="550px">
+
 
 
 <br><br>
@@ -47,4 +50,17 @@ AppleCider Architecture
 ```
 
 ### citation
+
+```
+@article{junell2025AppleCiDEr,
+      title={Applying multimodal learning to Classify transient Detections Early (AppleCiDEr) I: Data set, methods, and infrastructure}, 
+      author={Alexandra Junell and Argyro Sasli and Felipe Fontinele Nunes and Maojie Xu and Benny Border and Nabeel Rehemtulla and Mariia Rizhko and Yu-Jing Qin and Theophile Jegou Du Laz and Antoine Le Calloch and Sushant Sharma Chaudhary and Shaowei Wu and Jesper Sollerman and Niharika Sravan and Steven L. Groom and David Hale and Mansi M. Kasliwal and Josiah Purdum and Avery Wold and Matthew J. Graham and Michael W. Coughlin},
+      year={2025},
+      eprint={2507.16088},
+      archivePrefix={arXiv},
+      primaryClass={astro-ph.IM},
+      url={https://arxiv.org/abs/2507.16088}, 
+}
+
+```
 
