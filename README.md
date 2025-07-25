@@ -1,5 +1,5 @@
 <p align="center">
-<img align="center" src="https://github.com/skyportal/applecider/blob/main/logo/AppleCiDEr_github.png" alt="Draft AppleCiDEr Logo" height="350px">
+<img align="center" src="https://github.com/skyportal/applecider/blob/main/logo/AppleCiDEr%20-%20use%20over%20black.png" alt="Draft AppleCiDEr Logo" height="350px">
 </p>
 
 
@@ -7,8 +7,12 @@
 <p align="center"><i><b><ins>App</ins></b>lying multimoda<ins><b>l</b></ins> l<ins><b>e</ins></b>arning to <ins><b>C</ins></b>lassify trans<b><ins>i</ins></b>ent <b><ins>D</ins></b>etections <b><ins>E</ins></b>a<b><ins>r</ins></b>ly</i></p>
 <p align="center"><i>(repo under construction circa 5/16)</i></p>
 
-`AppleCiDEr` is a multimodal transient classifer that uses photometry, metadata, images and spectra. <i>Name inspired by University of Minnesota's famous [apple program](https://mnhardy.umn.edu/apples).</i> <br>
 
+`AppleCiDEr` ([arXiv](https://arxiv.org/abs/2507.16088) ) is a multimodal transient classifer that uses photometry, metadata, images and spectra. <i>Name inspired by University of Minnesota's famous [apple program](https://mnhardy.umn.edu/apples).</i> <br>
+
+
+
+<br><br>
 
 
 <br><br>
@@ -40,6 +44,7 @@ AppleCider Architecture
     └── cider_BTS.csv  # objects (+ classification) used to train AppleCiDEr that are in the public Bright Transient Survey
 └── logo    # versions of draft logo 
 
-
-
 ```
+
+### citation
+
