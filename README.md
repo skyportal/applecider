@@ -11,11 +11,9 @@
 `AppleCiDEr` ([arXiv](https://arxiv.org/abs/2507.16088) ) is a multimodal transient classifer that uses photometry, metadata, images and spectra. <i>Name inspired by University of Minnesota's famous [apple program](https://mnhardy.umn.edu/apples).</i> <br>
 
 
-
 <br><br>
-### ZTF production Pipeline 
+### `AppleCiDEr` in ZTF production
 <img align="center" src="https://github.com/skyportal/applecider/blob/main/img/ZTF_Production%20-%20use%20over%20black.png" alt="ZTF production diagram" height="550px">
-
 
 
 <br><br>
@@ -28,14 +26,15 @@ AppleCider Architecture
     ├── dataset.py             # DataGenerator
     ├── model.py               # implement multimodal models. contains: AppleCider (for all modalities), ZwickyCoder (for photo, image, metadata)
     └── trainer.py             
-└── models                           # collection of models used in AppleCiDEr and baseline models    
-    ├── Informer.py                  # photometry model
-    ├── BTSModel.py                  # image model
-    ├── MetaModel.py                 # metadata model
-    ├── GalSpecNet.py                # spectra model
-    ├── SpectraEfficientNetV2L.py    # spectra model
-    ├── SpectraViTBase.py            # spectra model
-    └── SpectraConvNeXtBase_train.py # spectra model
+└── models                               # collection of models used in AppleCiDEr and baseline models    
+    ├── Time2Vec.py, BaselineCLS.py      # photometry model   
+    ├── AstroMiNN.py                     # image, metadata model
+    └── other models           # old models for comparison
+        ├── Informer.py        # photometry model
+        ├── BTSModel.py        # image model
+        ├── MetaModel.py       # metadata model
+        └── GalSpecNet.py      # spectra model
+
 └── preprocess
     ├── process.py                   # preprocess script
     ├── alert_processor.py           # for ZTF alerts
@@ -44,8 +43,10 @@ AppleCider Architecture
     ├── transient_dataset.py         # preprocess dataset, save as "new" object alerts
 └── notebooks
 └── files
+    ├── ZTF_IDs.txt    # all ZTF IDs used in AppleCiDEr's dataset
     └── cider_BTS.csv  # objects (+ classification) used to train AppleCiDEr that are in the public Bright Transient Survey
-└── logo    # versions of draft logo 
+
+└── logo
 
 ```
 
