@@ -27,12 +27,12 @@ AppleCider Architecture
     ├── model.py               # implement multimodal models. contains: AppleCider (for all modalities), ZwickyCoder (for photo, image, metadata)
     └── trainer.py             
 └── models                               # collection of models used in AppleCiDEr and baseline models    
-    ├── Time2Vec.py, BaselineCLS.py      # photometry model   
-    ├── AstroMiNN.py                     # image, metadata model
+    ├── BaselineCLS.py      # photometry model   
+    ├── AstroMiNN.py        # image, metadata model
     └── other models           # old models for comparison
-        ├── Informer.py        # photometry model
-        ├── BTSModel.py        # image model
-        ├── MetaModel.py       # metadata model
+        ├── Informer.py        # photometry model (from AstroM3)
+        ├── BTSModel.py        # image model      (adapted from BTSbot)
+        ├── MetaModel.py       # metadata model   (from AstroM3)
         └── GalSpecNet.py      # spectra model
 
 └── preprocess
