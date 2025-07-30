@@ -11,7 +11,7 @@ class GalSpecNet(nn.Module):
     
     """
     GalSpecNet
-    Paper link: https://doi.org/10.1093/mnras/stad2913
+    Paper: https://doi.org/10.1093/mnras/stad2913
     """
     
     def __init__(self, config):

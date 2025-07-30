@@ -6,7 +6,7 @@ class BTSModel(nn.Module):
     
     """
     Image model from BTSbot for science, reference, difference images 
-    Paper link: https://arxiv.org/abs/2401.15167
+    Paper: https://doi.org/10.3847/1538-4357/ad5666
     """""
     
     def __init__(self, config):

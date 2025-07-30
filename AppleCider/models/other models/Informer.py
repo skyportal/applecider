@@ -62,7 +62,8 @@ class DataEmbedding(nn.Module):
 
 
 class ProbMask:
-    def __init__(self, B, H, L, index, scores, device='cpu'):
+    #def __init__(self, B, H, L, index, scores, device='cpu'):
+    def __init__(self, B, H, L, index, scores, device='cuda'):
         
         _mask = torch.ones(L, scores.shape[-1], dtype=torch.bool).to(device).triu(1)
         _mask_ex = _mask[None, None, :].expand(B, H, L, scores.shape[-1])
@@ -252,7 +253,7 @@ class Encoder(nn.Module):
 class Informer(nn.Module):
     """
     Informer with Propspare attention in O(LlogL) complexity
-    Paper link: https://ojs.aaai.org/index.php/AAAI/article/view/17325/17132
+    Paper: https://ojs.aaai.org/index.php/AAAI/article/view/17325/17132
     """
     def __init__(self, config):
         super(Informer, self).__init__()

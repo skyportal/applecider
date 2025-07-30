@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as
+import torch.nn.functional as F
 
 
 
@@ -8,7 +8,7 @@ class MetaModel(nn.Module):
     
     """
     Metadata model from AstroM3
-    Paper link: https://arxiv.org/abs/2411.08842
+    Paper: http://doi.org/10.3847/1538-3881/adcbad
     """""
     
     
