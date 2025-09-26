@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 
 class Time2Vec(nn.Module):
     """
