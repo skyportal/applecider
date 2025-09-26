@@ -23,7 +23,7 @@ class AppleCider(nn.Module):
                                num_classes=config['num_classes'],
                                dropout=config['p_dropout'], max_len=config['max_len']).to(device)
         self.spectra_encoder = build_spec_model(config).to(device) # output logits
-        self.img_metadata_encoder = astroMiNN(config)
+        self.img_metadata_encoder = AstroMiNN(config)
         
         self.photometry_proj = nn.Linear(config['p_d_model'], 5)
         self.spectra_proj = nn.Linear(256, 5)
