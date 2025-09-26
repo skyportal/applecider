@@ -3,6 +3,7 @@ import numpy as np
 from AppleCider.models.AstroMiNN import AstroMiNN
 from AppleCider.models.SpectraNet import build_spec_model
 from AppleCider.models.BaselineCLS import BaselineCLS
+import torch.nn as nn
 
 class AppleCider(nn.Module):
     
