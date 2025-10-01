@@ -1,0 +1,49 @@
+[project]
+name = "applecider"
+license = {file = "LICENSE"}
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+]
+dynamic = ["version"]
+requires-python = ">=3.9"
+dependencies = [
+]
+
+# On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
+[project.optional-dependencies]
+doug = [
+]
+
+max = [
+]
+
+drew = [
+    "numpy",
+    "torch",
+    "torchvision",
+]
+
+dev = [
+]
+
+[build-system]
+requires = [
+    "setuptools>=62", # Used to build and package the Python project
+    "setuptools_scm>=6.2", # Gets release version from git. Makes it available programmatically
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["AppleCider*"]  # List your package patterns here
+exclude = ["files*", "img*", "logo*", "notebook*", "tests*", "docs*"]                # Optionally exclude patterns
+
+[tool.setuptools_scm]
+write_to = "AppleCider/_version.py"
+
