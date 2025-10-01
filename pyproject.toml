@@ -15,7 +15,7 @@ requires-python = ">=3.9"
 dependencies = [
 ]
 
-# On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
+# To install optional dependencies (doug, max, drew, or dev), use: pip install '.[doug]' (or '.[max]', '.[drew]', '.[dev]') -- this works on all platforms; use single quotes in Unix shells.
 [project.optional-dependencies]
 doug = [
 ]
