@@ -24,9 +24,13 @@ max = [
 ]
 
 drew = [
+    "matplotlib",
     "numpy",
+    "scikit-learn",
+    "timm",
     "torch",
     "torchvision",
+    "tqdm"
 ]
 
 dev = [
