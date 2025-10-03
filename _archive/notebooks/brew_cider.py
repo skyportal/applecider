@@ -1263,7 +1263,6 @@ def set_random_seeds(random_seed):
     
     
 import wandb
-wandb.login(key='2441c7228ac0ac87db25beba7ace3e6dbad8ec21')
 
 WANDB_NOTEBOOK_NAME = 'CIDER.ipynb'
 
@@ -1278,10 +1277,10 @@ def objective(trial):
                                reinit=True,
                                notes=config['wandb_notes'],
                                tags=config['wandb_tags'])
-        config.update(wandb.config)                           # i dont think this proper updates config file lmao
+        config.update(wandb.config)
         config['run_id'] = wandb_run.id
         config['weights_path'] += f'-{wandb_run.id}'
-        wandb_run.config['weights_path'] = config['weights_path']   # try to update config file? again
+        wandb_run.config['weights_path'] = config['weights_path']
         print(config['weights_path'])
         wandb_run.config['run_id'] = wandb_run.id
 
