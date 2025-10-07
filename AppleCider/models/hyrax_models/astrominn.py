@@ -77,29 +77,24 @@ class AstroMiNN(nn.Module):
     """
     Image and Metadata transient classifier for use with Hyrax
     """
-    def __init__(self,
-                 num_classes=5,
-                 num_mlp_experts=4,
-                 towers_hidden_dims=16,
-                 towers_outdims=32,
-                 fusion_hidden_dims=128,
-                 fusion_router_dims=128,
-                 fusion_outdims=32,
-                 config=None
-                 ):
-        super().__init__()
+    def __init__(self, config=None, data_sample=None):
+        super().__init__(config)
 
-        self.has_image = True # Flag for image availability
-        self.num_classes = num_classes
-        self.num_mlp_experts = num_mlp_experts
-        self.towers_hidden_dims = towers_hidden_dims
-        self.towers_outdims = towers_outdims
+        ac = self.config['model']['astrominn']
 
-        self.fusion_hidden_dims = fusion_hidden_dims # was 1024
-        self.fusion_router_dims = fusion_router_dims # was 256
-        self.fusion_outdims = fusion_outdims
+        self.has_image = True #! Flag for image availability, is this important???
+        self.num_classes = ac['num_classes']
+        self.num_mlp_experts = ac['num_mlp_experts']
+        self.towers_hidden_dims = ac['towers_hidden_dims']
+        self.towers_outdims = ac['towers_outdims']
 
-        # ===== Metadata Processing Towers ===== 
+        self.fusion_hidden_dims = ac['fusion_hidden_dims'] # was 1024
+        self.fusion_router_dims = ac['fusion_router_dims'] # was 256
+        self.fusion_outdims = ac['fusion_outdims']
+
+        # ===== Metadata Processing Towers =====
+        #! All of these seem extremely fragile - we should define the input_size
+        #! at runtime using the data_sample as the guide.
         # Each tower processes specific metadata features
         # PSF quality features tower
         self.psf_tower = ResidualTowerBlock(2, self.towers_hidden_dims, self.towers_outdims)
@@ -125,6 +120,7 @@ class AstroMiNN(nn.Module):
 
         # ===== Image Processing =====
         # 🤡🤡🤡 add .to(device)
+        #! Hardcoded '4' should probably dynamically extracted from `data_sample`???
         self.image_tower = SplitHeadConvNeXt(
                     pretrained=False, # False if training from scratch
                     in_chans=4, #! Critical: override default 3-channel input
@@ -136,6 +132,7 @@ class AstroMiNN(nn.Module):
 
         # ===== Modality Fusion MoE =====
         # Combines features from all towers (4 metadata + image)
+        #! I'm assuming that the hardcoded '5' is the num_classes defined in the config?
         self.fusion_experts = nn.ModuleList([
             ResidualTowerBlock(fusion_dims, self.fusion_hidden_dims, 5)
             for _ in range(self.num_mlp_experts)
@@ -144,7 +141,7 @@ class AstroMiNN(nn.Module):
         self.fusion_router = nn.Sequential(
             nn.Linear( fusion_dims, fusion_dims//2),
             nn.Tanh(),
-            nn.Dropout(0.3),
+            nn.Dropout(0.3), #! This seems like it should be a config parameter too???
             nn.Linear(fusion_dims//2, self.num_mlp_experts),
             nn.Sigmoid()
         )
@@ -194,20 +191,21 @@ class AstroMiNN(nn.Module):
         # Fusion MoE - combine features from all modalities
         fusion_weights = self.fusion_router(all_feats)
 
-        moe_output = torch.zeros(metadata.size(0), 5, device='cuda') # ,device=metadata.to(device))
+        #! Defining the output device here is bad!!!
+        moe_output = torch.zeros(metadata.size(0), 5, device='cuda')
 
         topk_weights, topk_indices = torch.topk(fusion_weights, k=2, dim=-1)  # [B, k]
 
         # Process only through selected experts
         for expert_idx, expert in enumerate(self.fusion_experts):
             # Mask for samples where this expert is in top-k
-            expert_mask = (topk_indices == expert_idx).any(dim=-1)  # [B]   # 'ResidualTowerBlock'
-            
+            expert_mask = (topk_indices == expert_idx).any(dim=-1) # [B]   # 'ResidualTowerBlock'
+
             if expert_mask.any():
                 # Get weights for this expert [M] where M=sum(expert_mask)
                 weights = topk_weights[expert_mask, (topk_indices[expert_mask] == expert_idx).nonzero()[:, 1]]
                 # Compute expert output only for relevant samples
-                expert_out = expert(all_feats[expert_mask])  # [M, num_classes]
+                expert_out = expert(all_feats[expert_mask]) # [M, num_classes]
                 # Weighted contribution
                 moe_output[expert_mask] += weights.unsqueeze(-1) * expert_out
 
