@@ -80,7 +80,7 @@ class AstroMiNN(nn.Module):
     def __init__(self, config=None, data_sample=None):
         super().__init__(config)
 
-        ac = self.config['model']['astrominn']
+        ac = self.config['model']['AstroMiNN']
 
         self.has_image = True #! Flag for image availability, is this important???
         self.num_classes = ac['num_classes']

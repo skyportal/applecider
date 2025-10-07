@@ -1,5 +1,5 @@
 [model]
-[model.astrominn]
+[model.AstroMiNN]
 num_classes = 5
 num_mlp_experts = 4
 
