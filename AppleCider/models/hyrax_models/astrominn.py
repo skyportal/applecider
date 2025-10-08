@@ -146,6 +146,11 @@ class AstroMiNN(nn.Module):
             nn.Sigmoid()
         )
 
+        # Define some training metrics
+        self.total_loss = []
+        self.total_correct_predictions = 0
+        self.total_predictions = 0
+
     def forward(self, metadata, image):
         """Processes input metadata and optional image data through specialized towers,
         combines features using a Mixture of Experts (MoE) approach, and returns
@@ -211,14 +216,52 @@ class AstroMiNN(nn.Module):
 
         return moe_output
 
+    def _update_stats(self, loss, logits, labels):
+        probabilities = torch.nn.functional.softmax(logits, dim=1)
+        _, predicted_labels = torch.max(probabilities, dim=1)
+        correct_predictions = (predicted_labels == labels).sum().item()
+
+        self.total_correct_predictions += correct_predictions
+        self.total_predictions += labels.size(0)
+        self.total_loss.append(loss.item())
+
+    def _calculate_stats(self):
+        return sum(self.total_loss) / len(self.total_loss), self.total_correct_predictions / self.total_predictions
+
     def train_step(self, batch):
-        """Place holder for use with Hyrax training. Need to investigate how the
-        training actually happens, then we can fill in this method."""
-        pass
+        """This method has been created based on the logic found in the file
+        `.../AppleCider/core/trainer.py`.
+        Based on that file, the optimizer and criterion functions appear to be
+        configurable, but it's not clear which one are actually used.
+        """
+
+        # This is a placeholder until I implement the to_tensor method.
+        metadata, images, labels = batch
+
+        self.optimizer.zero_grad()
+
+        logits = self.forward(metadata, images)
+
+        loss = self.criterion(logits, labels)
+
+        self._update_stats(loss, logits, labels)
+
+        loss.backward()
+
+        self.optimizer.step()
+
+        # in trainer.py this is calculated per epoch, here we calculate it per batch
+        loss, acc = self._calculate_stats()
+
+        return {'loss': loss, 'acc': acc}
+
 
     @staticmethod
     def to_tensor(data_dict):
         """Place holder for use with Hyrax. This method will receive a dictionary
         of data and should convert it to the relevant tensors needed for either
         training or inference."""
-        pass
+        metadata = 1
+        images = 1
+        labels = 1
+        return (metadata, images, labels)
