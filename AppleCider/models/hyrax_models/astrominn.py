@@ -78,8 +78,9 @@ class AstroMiNN(nn.Module):
     Image and Metadata transient classifier for use with Hyrax
     """
     def __init__(self, config=None, data_sample=None):
-        super().__init__(config)
+        super().__init__()
 
+        self.config = config
         ac = self.config['model']['AstroMiNN']
 
         self.has_image = True #! Flag for image availability, is this important???
@@ -119,13 +120,12 @@ class AstroMiNN(nn.Module):
         self.mega_tower = ResidualTowerBlock(19, 128, self.towers_outdims)
 
         # ===== Image Processing =====
-        # 🤡🤡🤡 add .to(device)
         #! Hardcoded '4' should probably dynamically extracted from `data_sample`???
         self.image_tower = SplitHeadConvNeXt(
-                    pretrained=False, # False if training from scratch
-                    in_chans=4, #! Critical: override default 3-channel input
-                    outdims=self.towers_outdims # Your task's number of classes
-                ).to(device) #! `.to(device)` probably isn't necessary in Hyrax.
+            pretrained=False, # False if training from scratch
+            in_chans=4, #! Critical: override default 3-channel input
+            outdims=self.towers_outdims # Your task's number of classes
+        )
 
         #! These are odd hard coded values: 6 and 3???
         fusion_dims = 6*self.towers_outdims + 3*self.fusion_outdims
@@ -191,8 +191,8 @@ class AstroMiNN(nn.Module):
         # Fusion MoE - combine features from all modalities
         fusion_weights = self.fusion_router(all_feats)
 
-        #! Defining the output device here is bad!!!
-        moe_output = torch.zeros(metadata.size(0), 5, device='cuda')
+        #! Is the hardcoded '5' here the num_classes from the config???
+        moe_output = torch.zeros(metadata.size(0), 5)
 
         topk_weights, topk_indices = torch.topk(fusion_weights, k=2, dim=-1)  # [B, k]
 
@@ -217,7 +217,7 @@ class AstroMiNN(nn.Module):
         pass
 
     @staticmethod
-    def to_tensor(self, data_dict):
+    def to_tensor(data_dict):
         """Place holder for use with Hyrax. This method will receive a dictionary
         of data and should convert it to the relevant tensors needed for either
         training or inference."""
