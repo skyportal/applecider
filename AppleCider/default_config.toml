@@ -1,0 +1,38 @@
+[model]
+[model.BaselineCLS]
+num_classes = 5 # TODO: Find actual number
+pad_mask = 1 # TODO: Find actual number
+mode = "photo"
+
+# Pulled from abrown3/AppleCiDEr_Skyportal/modes/photo/photo_t2vec_transformer_classifier.ipynb
+# Some may be unneccesary for hyrax and others may belong in the dataset class
+# data --------------------------------------------------------
+output_dir = '/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events'
+stats_file = 'feature_stats_day100.npz'
+horizon_days = 50.0 # <- fine-tuning on 50 days
+batch_size = 256 #64
+sampler_balance = True
+num_workers = 8
+# model -------------------------------------------------------
+d_model = 128
+n_heads = 8 #4
+n_layers = 4 #2
+dropout = 0.30
+max_len = 257 #300 #256 #128 #128
+# optimiser ---------------------------------------------------
+lr = 5e-6
+weight_decay = 1e-2
+
+# loss & imbalance -------------------------------------------
+focal_gamma = 2.0
+
+# augmentation -------horizon_days----------------------------------------
+cut_time_p = None #(.25,.25,.25,.25), #None,  # or (.25,.25,.25,.25)
+p_dropout = 0.1
+jitter_scale = 0.10
+flux_nu = 8
+# training schedule ------------------------------------------
+epochs = 150
+patience = 30
+# misc --------------------------------------------------------
+seed = 42
