@@ -1,3 +1,4 @@
+import numpy as np
 import timm
 import torch
 import torch.nn as nn
@@ -236,6 +237,7 @@ class AstroMiNN(nn.Module):
         """
 
         # This is a placeholder until I implement the to_tensor method.
+        print(batch)
         metadata, images, labels = batch
 
         self.optimizer.zero_grad()
@@ -261,7 +263,12 @@ class AstroMiNN(nn.Module):
         """Place holder for use with Hyrax. This method will receive a dictionary
         of data and should convert it to the relevant tensors needed for either
         training or inference."""
-        metadata = 1
-        images = 1
-        labels = 1
+        data = data_dict['data']
+
+        columns = [chr(i) for i in range(ord('a'), ord('z')+1)]
+
+        # horizontally concatenate metadata columns
+        metadata = torch.tensor(np.hstack([data[c] for c in columns]))
+        images = torch.tensor(data['image']).float()
+        labels = torch.tensor(data['label']).long()
         return (metadata, images, labels)
