@@ -116,17 +116,6 @@ class HyraxBaselineCLS(nn.Module):
         torch.Tensor
             A tensor of shape (L, 7), where L is the sequence length.
         """
-        # The following is all copilot generated
-        dt = torch.log1p(torch.tensor(data_dict['dt'], dtype=torch.float32))  # Log1p of time differences
-        dt_prev = torch.log1p(torch.tensor(data_dict['dt_prev'], dtype=torch.float32))  # Log1p of previous time differences
-        logf = torch.tensor(data_dict['logf'], dtype=torch.float32)  # Logarithm of flux
-        logfe = torch.tensor(data_dict['logfe'], dtype=torch.float32)  # Logarithm of flux error
-        band = torch.tensor(data_dict['band'], dtype=torch.long)  # Band indices (categorical)
+        # Assuming reading in a data dictionary from an alert npy file
 
-        # One-hot encode the band indices (3 bands assumed)
-        band_oh = torch.nn.functional.one_hot(band, num_classes=3).to(torch.float32)
-
-        # Concatenate all features along the last dimension
-        return torch.cat([dt.unsqueeze(-1), dt_prev.unsqueeze(-1),
-                        logf.unsqueeze(-1), logfe.unsqueeze(-1),
-                        band_oh], dim=-1)
+        return torch.tensor(data_dict["photometry"])
