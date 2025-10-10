@@ -9,3 +9,9 @@ towers_outdims = 32
 fusion_hidden_dims = 128
 fusion_router_dims = 128
 fusion_outdims = 32
+
+[model.SpectraNet]
+redshift = false
+depths = [1, 1, 1, 1, 1]
+# need an actual default for this
+class_order = 10
