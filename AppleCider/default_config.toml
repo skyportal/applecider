@@ -1,4 +1,15 @@
 [model]
+[model.AstroMiNN]
+num_classes = 5
+num_mlp_experts = 4
+
+towers_hidden_dims = 16
+towers_outdims = 32
+
+fusion_hidden_dims = 128
+fusion_router_dims = 128
+fusion_outdims = 32
+
 [model.BaselineCLS]
 num_classes = 5 # TODO: Find actual number
 pad_mask = 1 # TODO: Find actual number
@@ -36,3 +47,4 @@ epochs = 150
 patience = 30
 # misc --------------------------------------------------------
 seed = 42
+
