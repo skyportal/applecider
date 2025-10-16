@@ -1,0 +1,5 @@
+[model]
+name = "AppleCider.models.hyrax_models.HyraxBaselineCLS.HyraxBaselineCLS"
+
+[data_loader]
+batch_size = 3

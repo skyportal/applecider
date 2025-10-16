@@ -10,26 +10,30 @@ from ..BaselineCLS import Time2Vec
 
 @hyrax_model
 class HyraxBaselineCLS(nn.Module):
-    def __init__(self, config, shape):
+    def __init__(self, config, data_sample=None):
         super().__init__()
 
-        self.in_proj = nn.Linear(7, config['d_model'])
-        self.cls_tok = nn.Parameter(torch.zeros(1, 1, config['d_model']))
+        self.config = config
 
-        self.time2vec = Time2Vec(config['d_model'])
+        model_config = config["model"]["BaselineCLS"]
+
+        self.in_proj = nn.Linear(7, model_config['d_model'])
+        self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config['d_model']))
+
+        self.time2vec = Time2Vec(model_config['d_model'])
 
         enc_layer = nn.TransformerEncoderLayer(
-            config['d_model'], config['n_heads'], config['d_model'] * 4,
-            config['dropout'], batch_first=True)
-        self.encoder = nn.TransformerEncoder(enc_layer, config['n_layers'])
-        self.norm = nn.LayerNorm(config['d_model'])
-        self.head = nn.Linear(config['d_model'], config['num_classes'])
+            model_config['d_model'], model_config['n_heads'], model_config['d_model'] * 4,
+            model_config['dropout'], batch_first=True)
+        self.encoder = nn.TransformerEncoder(enc_layer, model_config['n_layers'])
+        self.norm = nn.LayerNorm(model_config['d_model'])
+        self.head = nn.Linear(model_config['d_model'], model_config['num_classes'])
 
-        self.classification = True if config['mode'] == 'photo' else False
+        self.classification = True if model_config['mode'] == 'photo' else False
         if self.classification:
-            self.fc = nn.Linear(config['d_model'], config['num_classes'])
+            self.fc = nn.Linear(model_config['d_model'], model_config['num_classes'])
 
-        self.pad_mask = config['pad_mask']
+        self.pad_mask = model_config['pad_mask']
 
     def forward(self, x):
         """
@@ -117,5 +121,18 @@ class HyraxBaselineCLS(nn.Module):
             A tensor of shape (L, 7), where L is the sequence length.
         """
         # Assuming reading in a data dictionary from an alert npy file
+        data_dict = data_dict["data"]["photometry"]
+        dt = data_dict["dt"][:, None]        # (L, 1)
+        dt_prev = data_dict["dt_prev"][:, None]     # (L, 1)
+        logf = data_dict["logf"][:, None]        # (L, 1)
+        logfe = data_dict["logfe"][:, None]      # (L, 1)
+        band = data_dict["band"][:, None]                   # (L,)
+        
+        vec4 = np.stack([dt, dt_prev, logf, logfe], 1)
 
-        return torch.tensor(data_dict["photometry"])
+        one_hot_encoding = np.eye(3, dtype=np.float32)
+        one_hot_band = one_hot_encoding[band.astype(np.int64)]  # (L, 3)
+        #print(vec4, vec4.shape)
+        #return vec4
+        return torch.from_numpy(vec4)
+        #return torch.from_numpy(np.concatenate([vec4, one_hot_band], 1))  # (L, 7)
