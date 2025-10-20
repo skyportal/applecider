@@ -1,0 +1,26 @@
+[model]
+name = "AppleCider.models.hyrax_models.spectranet.SpectraNet"
+
+[model_inputs]
+
+# Note - the sub-table (model_inputs.<sub-table>) can be named anything you like.
+
+[model_inputs.data]
+
+# Name of the dataset class to use, or the import path to an external dataset class.
+
+# e.g. "HyraxCifarDataSet", "user_pkg.data_set.ExternalDataset".
+
+dataset_class = "AppleCider.hyrax_datasets.spectra_dataset.SpectraData"
+fields = ["flux", "label"]
+
+[data_set]
+
+# Warning - using data_set.name to define the dataset class will be deprecated.
+
+# Please use [model_inputs.<friendly_name>.dataset_class] instead. See usage above.
+
+# name = "AppleCider.hyrax_datasets.spectra_dataset.SpectraData"
+
+[train]
+epochs = 1

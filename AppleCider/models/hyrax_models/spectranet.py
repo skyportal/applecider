@@ -63,7 +63,7 @@ class SpectraNet(nn.Module):
         
         self.config = config
 
-        self.redshift = config["redshift"]
+        self.redshift = config["model"]["SpectraNet"]["redshift"]
 
         #! Should this be hard coded?
         self.kernel_sizes_per_stage = [
@@ -74,7 +74,9 @@ class SpectraNet(nn.Module):
             [3, 7, 13]
         ]
 
-        if len(config["depths"]) != len(self.kernel_sizes_per_stage):
+        self.depths = config["model"]["SpectraNet"]["depths"]
+
+        if len(self.depths) != len(self.kernel_sizes_per_stage):
             raise ValueError("Length of depths must match number of stages")
 
         #! Should this be part of config ?
@@ -104,7 +106,7 @@ class SpectraNet(nn.Module):
             self.classifier = nn.Sequential(
                 nn.Linear(self.flat_dim, 384),
                 nn.LayerNorm(384), nn.GELU(), nn.Dropout(0.5),
-                nn.Linear(384, len(config['class_order']))
+                nn.Linear(384, config["model"]["SpectraNet"]["class_order"])
             )
 
     def forward(self, x):
@@ -119,7 +121,8 @@ class SpectraNet(nn.Module):
         x_fused = torch.cat([x_max], dim=1)  # [B, 3C]
 
         if self.redshift:
-            return self.regressor(x_fused).squeeze(1)
+            raise NotImplementedError("not implemented yet.")
+            # return self.regressor(x_fused).squeeze(1)
         else:
             return self.classifier(x_fused)
 
@@ -139,7 +142,8 @@ class SpectraNet(nn.Module):
 
     @staticmethod
     def to_tensor(data_dict):
-        #TODO: implement
-        pass
+
+        return (torch.tensor(data_dict["data"]["flux"]), torch.tensor(data_dict["data"]["label"]))
+
 
 

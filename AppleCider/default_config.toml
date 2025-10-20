@@ -1,4 +1,3 @@
-[model]
 [model.AstroMiNN]
 num_classes = 5
 num_mlp_experts = 4
@@ -14,4 +13,4 @@ fusion_outdims = 32
 redshift = false
 depths = [1, 1, 1, 1, 1]
 # need an actual default for this
-class_order = 10
+class_order = 9
