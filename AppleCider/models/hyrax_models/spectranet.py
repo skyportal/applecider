@@ -121,8 +121,7 @@ class SpectraNet(nn.Module):
         x_fused = torch.cat([x_max], dim=1)  # [B, 3C]
 
         if self.redshift:
-            raise NotImplementedError("not implemented yet.")
-            # return self.regressor(x_fused).squeeze(1)
+            return self.regressor(x_fused).squeeze(1)
         else:
             return self.classifier(x_fused)
 
@@ -131,19 +130,25 @@ class SpectraNet(nn.Module):
         based on my kbmod-ml version lol
         """
         # spectranet uses the `train_one_epoch` function in utils.py
-        inputs, labels = batch
+        inputs, labels, redshifts = batch
 
         self.optimizer.zero_grad()
         outputs = self(inputs)
-        loss = self.criterion(outputs, labels)
+        if self.redshift:
+            loss = self.criterion(outputs, redshifts)
+        else:
+            loss = self.criterion(outputs, labels)
         loss.backward()
         self.optimizer.step()
         return {"loss": loss.item()}
 
     @staticmethod
     def to_tensor(data_dict):
-
-        return (torch.tensor(data_dict["data"]["flux"]), torch.tensor(data_dict["data"]["label"]))
+        return (
+            torch.tensor(data_dict["data"]["flux"]),
+            torch.tensor(data_dict["data"]["label"]),
+            torch.tensor(data_dict["data"]["redshift"]).to(torch.float32),
+        )
 
 
 

@@ -52,8 +52,11 @@ class SpectraData(HyraxDataset, Dataset):
 
     def get_label(self, idx):
         label = self.table["label"][idx]
-        # label = np.array([label])
         return label
+
+    def get_redshift(self, idx):
+        redshift = self.table["redshift"][idx]
+        return redshift
 
     def _read_metadata(self):
         """This is a pretend implementation so we don't use the path passed, which you might use
@@ -70,14 +73,6 @@ class SpectraData(HyraxDataset, Dataset):
             "redshift": self._redshifts,
             "file_path": self._file_paths,
         })
-
-    def __getitem__(self, idx):
-        label = self._labels[idx]
-
-        return {
-            "flux": torch.tensor(self._data[idx]),
-            "label": torch.tensor(label)
-        }
 
     def __len__(self):
         return len(self._data)
