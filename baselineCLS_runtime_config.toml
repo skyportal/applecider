@@ -2,4 +2,8 @@
 name = "AppleCider.models.hyrax_models.HyraxBaselineCLS.HyraxBaselineCLS"
 
 [data_loader]
-batch_size = 3
+batch_size = 12
+collate_fn = "AppleCider.models.hyrax_models.photo_dataset.collate"
+
+[optimizer]
+name = "torch.optim.Adam"

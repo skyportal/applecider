@@ -4,6 +4,7 @@ import numpy as np
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from ..BaselineCLS import Time2Vec
 
@@ -14,8 +15,12 @@ class HyraxBaselineCLS(nn.Module):
         super().__init__()
 
         self.config = config
-
+        self._criterion = FocalLoss
+        
         model_config = config["model"]["BaselineCLS"]
+        #self.optimizer = torch.optim.AdamW(self.parameters(), lr=model_config["lr"], weight_decay=model_config["weight_decay"])
+        # Use AdamW eventually
+        #self.optimizer = torch.optim.Adam()
 
         self.in_proj = nn.Linear(7, model_config['d_model'])
         self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config['d_model']))
@@ -33,15 +38,18 @@ class HyraxBaselineCLS(nn.Module):
         if self.classification:
             self.fc = nn.Linear(model_config['d_model'], model_config['num_classes'])
 
-        self.pad_mask = model_config['pad_mask']
+        #self.pad_mask = model_config['pad_mask']
 
-    def forward(self, x):
+    def forward(self, x, pad):
         """
         x: (B, L, 7)  - the raw event tensor from build_event_tensor
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
         pad_mask: (B, L) boolean
         """
+        #import pdb;pdb.set_trace()
         B, L, _ = x.shape
+        #B = self.config["data_loader"]["batch_size"]
+        #L = x.shape[0]
 
         # project into model dim
         h = self.in_proj(x)                     # (B, L, d_model)
@@ -52,20 +60,20 @@ class HyraxBaselineCLS(nn.Module):
         te = self.time2vec(t)
 
         # add it:
-        h = h + te                              # (B, L, d_model)
-
+        hte = h + te                              # (B, L, d_model)
         # prepend a learned CLS token:
         tok = self.cls_tok.expand(B, -1, -1)      # (B,1,d_model)
-        h = torch.cat([tok, h], dim=1)        # (B, L+1, d_model)
+        hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
 
         # adjust padding mask to account for CLS at idx=0
-        pad = torch.cat(
-            [torch.zeros(B, 1, dtype=torch.bool),
-             self.pad_mask], dim=1
-        )
-
+        
+        #pad = torch.cat(
+        #    [torch.zeros(B, 1, device=pad_mask.device, dtype=torch.bool),
+        #     pad_mask], dim=1
+        #)
+        #import pdb; pdb.set_trace()
         # encode
-        z = self.encoder(h, src_key_padding_mask=pad)  # (B, L+1, d_model)
+        z = self.encoder(hte, src_key_padding_mask=pad)  # (B, L+1, d_model)
 
         output = self.norm(z[:, 0])  # (B, d_model )
 
@@ -90,11 +98,14 @@ class HyraxBaselineCLS(nn.Module):
         Current loss value : dict
             Dictionary containing the loss value for the current batch.
         """
+        #import pdb; pdb.set_trace()
         data = batch[0]
+        labels = batch[1]
+        mask = batch[2]
         self.optimizer.zero_grad()
 
-        decoded = self.forward(data)
-        loss = self.criterion(decoded, data)
+        decoded = self.forward(data, mask)
+        loss = self.criterion(decoded, labels)
         loss.backward()
         self.optimizer.step()
 
@@ -121,18 +132,28 @@ class HyraxBaselineCLS(nn.Module):
             A tensor of shape (L, 7), where L is the sequence length.
         """
         # Assuming reading in a data dictionary from an alert npy file
-        data_dict = data_dict["data"]["photometry"]
-        dt = data_dict["dt"][:, None]        # (L, 1)
-        dt_prev = data_dict["dt_prev"][:, None]     # (L, 1)
-        logf = data_dict["logf"][:, None]        # (L, 1)
-        logfe = data_dict["logfe"][:, None]      # (L, 1)
-        band = data_dict["band"][:, None]                   # (L,)
-        
-        vec4 = np.stack([dt, dt_prev, logf, logfe], 1)
+        photo_tensor, label_tensor = data_dict["data"]["photometry"], data_dict["data"]["label"]
+        if "pad_mask" in data_dict["data"].keys():
+            mask_tensor = data_dict["data"]["pad_mask"]
+            return (photo_tensor, label_tensor, mask_tensor)
+        return (photo_tensor, label_tensor)
 
-        one_hot_encoding = np.eye(3, dtype=np.float32)
-        one_hot_band = one_hot_encoding[band.astype(np.int64)]  # (L, 3)
-        #print(vec4, vec4.shape)
-        #return vec4
-        return torch.from_numpy(vec4)
-        #return torch.from_numpy(np.concatenate([vec4, one_hot_band], 1))  # (L, 7)
+class FocalLoss(nn.Module):
+    def __init__(self, gamma: float = 2.0, alpha: torch.Tensor = None, eps: float = 0, reduction: str = 'mean'): #eps=0.1
+        super().__init__()
+        
+        self.gamma, self.alpha, self.eps, self.reduction = gamma, alpha, eps, reduction
+    def forward(self, logits: torch.Tensor, target: torch.Tensor):
+        B, C = logits.shape
+        logp = F.log_softmax(logits, dim=1); p = logp.exp()
+        if self.eps > 0:
+            smooth = torch.full_like(logp, fill_value=self.eps/(C-1))
+            smooth.scatter_(1, target.unsqueeze(1), 1.0-self.eps)
+            y = smooth
+        else:
+            y = F.one_hot(target, num_classes=C).float()
+        focal_weight = (1.0 - p).pow(self.gamma)
+        if self.alpha is not None:
+            focal_weight = focal_weight * self.alpha.view(1, C)
+        loss = -(y * focal_weight * logp).sum(dim=1)
+        return loss.mean() if self.reduction=='mean' else loss.sum()
