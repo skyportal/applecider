@@ -94,7 +94,7 @@ class HyraxBaselineCLS(nn.Module):
         mask = batch[2]
         self.optimizer.zero_grad()
 
-        decoded = self.forward(data, mask)
+        decoded = self.forward(data, pad=mask)
         loss = self.criterion(decoded, labels)
         loss.backward()
         self.optimizer.step()

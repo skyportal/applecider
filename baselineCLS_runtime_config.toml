@@ -5,5 +5,8 @@ name = "AppleCider.models.hyrax_models.HyraxBaselineCLS.HyraxBaselineCLS"
 batch_size = 12
 collate_fn = "AppleCider.models.hyrax_models.photo_dataset.collate"
 
+[data_set]
+manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
+
 [optimizer]
 name = "torch.optim.Adam"
