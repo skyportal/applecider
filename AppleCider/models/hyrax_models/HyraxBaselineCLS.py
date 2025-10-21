@@ -46,10 +46,7 @@ class HyraxBaselineCLS(nn.Module):
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
         pad_mask: (B, L) boolean
         """
-        #import pdb;pdb.set_trace()
         B, L, _ = x.shape
-        #B = self.config["data_loader"]["batch_size"]
-        #L = x.shape[0]
 
         # project into model dim
         h = self.in_proj(x)                     # (B, L, d_model)
@@ -65,13 +62,6 @@ class HyraxBaselineCLS(nn.Module):
         tok = self.cls_tok.expand(B, -1, -1)      # (B,1,d_model)
         hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
 
-        # adjust padding mask to account for CLS at idx=0
-        
-        #pad = torch.cat(
-        #    [torch.zeros(B, 1, device=pad_mask.device, dtype=torch.bool),
-        #     pad_mask], dim=1
-        #)
-        #import pdb; pdb.set_trace()
         # encode
         z = self.encoder(hte, src_key_padding_mask=pad)  # (B, L+1, d_model)
 
@@ -141,7 +131,7 @@ class HyraxBaselineCLS(nn.Module):
 class FocalLoss(nn.Module):
     def __init__(self, gamma: float = 2.0, alpha: torch.Tensor = None, eps: float = 0, reduction: str = 'mean'): #eps=0.1
         super().__init__()
-        
+
         self.gamma, self.alpha, self.eps, self.reduction = gamma, alpha, eps, reduction
     def forward(self, logits: torch.Tensor, target: torch.Tensor):
         B, C = logits.shape

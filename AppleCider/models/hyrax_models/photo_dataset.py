@@ -64,27 +64,33 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
     def __len__(self):
         return len(self.filenames)
 
+  
+def load_stats(path: Path):
+    st = np.load(path)
+    return (torch.from_numpy(st['mean']), torch.from_numpy(st['std']))
+
 
 def collate(batch):
-    #import pdb;pdb.set_trace()
+    '''custom collate function for photo events dataset'''
+    # For pre-training
+    # mean, std = load_stats(Path(cfg.output_dir) / cfg.stats_file)
     mean = 0
     std = 1
-    #import pdb;pdb.set_trace()
+
     seqs = []
     labels = []
     for i in batch:
-        #import pdb; pdb.set_trace()
         seqs += [i["data"]["photometry"]]
         labels += [i["data"]["label"]]  
 
-    #seqs, labels = zip(*batch)
     lens = [s.size(0) for s in seqs]
     pad  = pad_sequence(seqs, batch_first=True)              # (B, L, 7)
     mask = torch.stack([torch.cat([torch.zeros(l), torch.ones(pad.size(1)-l)]) for l in lens]).bool()
     cont = (pad[..., :4] - mean) / (std + 1e-8)
+
+    # adjust padding mask to account for CLS at idx=0
     pad_mask = torch.cat(
             [torch.zeros(len(batch), 1, device=mask.device, dtype=torch.bool),
              mask], dim=1
         )
     return {"data": {"photometry": torch.cat([cont, pad[..., 4:]], -1), "label": torch.tensor(labels), "pad_mask": torch.tensor(pad_mask)}}
-    #return torch.cat([cont, pad[..., 4:]], -1), torch.tensor(labels), mask  # x, y, pad_mask

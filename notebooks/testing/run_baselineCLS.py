@@ -1,6 +1,6 @@
 from hyrax import Hyrax
 
-toml_path = "/Users/dbranton/lincc/incubators/baselineCLS_runtime_config.toml"
+toml_path = "/Users/dbranton/lincc/incubators/applecider/notebooks/testing/baselinecls_conf.toml"
 h = Hyrax(config_file=toml_path)
 h.config["model_inputs"] = {
     "data": {
