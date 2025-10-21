@@ -44,6 +44,7 @@ class SpectraNetBlock(nn.Module):
         return x
 
 def make_stage(in_c, out_c, depth, kernel_sizes, use_ln=True, do_pool=True):
+    print(in_c, out_c, depth, kernel_sizes, use_ln, do_pool)
     k = len(kernel_sizes)
     blocks = []
     for i in range(depth):
@@ -63,58 +64,67 @@ class SpectraNet(nn.Module):
         
         self.config = config
 
-        self.redshift = config["model"]["SpectraNet"]["redshift"]
+        spectranet_config = config["model"]["SpectraNet"]
 
-        #! Should this be hard coded?
-        self.kernel_sizes_per_stage = [
-            [3, 61, 1021],
-            [3, 31, 251],
-            [3, 15, 61],
-            [3, 11, 31],
-            [3, 7, 13]
-        ]
+        self.redshift = spectranet_config["redshift"]
+        kernel_sizes_per_stage = spectranet_config["kernel_sizes_per_stage"]
+        depths = spectranet_config["depths"]
+        use_ln_stages = spectranet_config["use_ln_stages"]
+        channels = spectranet_config["channels"]
+        flat_dim = spectranet_config["flat_dim"]
+        class_order = spectranet_config["class_order"]
 
-        self.depths = config["model"]["SpectraNet"]["depths"]
+        if (
+            len(depths) !=
+            len(use_ln_stages) !=
+            len(channels) !=
+            len(kernel_sizes_per_stage)
+        ):
+            raise ValueError(
+                "depths, use_ln_stages, channels, and kernel_sizes_per_stage must be the same length."
+            )
 
-        if len(self.depths) != len(self.kernel_sizes_per_stage):
-            raise ValueError("Length of depths must match number of stages")
+        # create each layer
+        self.stages = []
+        self.ks = []
+        for i in range(len(depths)):
+            in_channel = 1 if i == 0 else channels[i - 1]
+            out_channel = channels[i]
+            depth = depths[i]
+            kernel_size = kernel_sizes_per_stage[i]
+            use_ln_stage = use_ln_stages[i]
+            do_pool = False if i == len(depths) - 1 else True
 
-        #! Should this be part of config ?
-        use_ln_stages = [True, True, True, True, True]
-        channels = [1, 64, 128, 256, 512, 1024]
+            stage, k = make_stage(
+                in_c=in_channel,
+                out_c=out_channel,
+                depth=depth,
+                kernel_sizes=kernel_size,
+                use_ln=use_ln_stage,
+                do_pool=do_pool,
+            )
 
-        #! This could be a for loop probably
-        self.stage1, k1 = make_stage(channels[0], channels[1], self.depths[0], self.kernel_sizes_per_stage[0], use_ln=use_ln_stages[0])
-        self.stage2, k2 = make_stage(channels[1], channels[2], self.depths[1], self.kernel_sizes_per_stage[1], use_ln=use_ln_stages[1])
-        self.stage3, k3 = make_stage(channels[2], channels[3], self.depths[2], self.kernel_sizes_per_stage[2], use_ln=use_ln_stages[2])
-        self.stage4, k4 = make_stage(channels[3], channels[4], self.depths[3], self.kernel_sizes_per_stage[3], use_ln=use_ln_stages[3])
-        self.stage5, k5 = make_stage(channels[4], channels[5], self.depths[4], self.kernel_sizes_per_stage[4], use_ln=use_ln_stages[4], do_pool=False)
-        self.ks = [k1, k2, k3, k4, k5]
+            self.stages.append(stage)
+            self.ks.append(k)
 
-        #! This has a hard coded calculation in the other model
-        #! Should be part of config ?
-        length = 16
-        self.flat_dim = 3072
+        # create the sequence for all layers
+        self.all_stages = nn.Sequential(*self.stages)
 
         if self.redshift:
             self.regressor = nn.Sequential(
-                nn.Linear(self.flat_dim, 384),
+                nn.Linear(flat_dim, 384),
                 nn.LayerNorm(384), nn.GELU(), nn.Dropout(0.5),
                 nn.Linear(384, 1)
             )
         else:
             self.classifier = nn.Sequential(
-                nn.Linear(self.flat_dim, 384),
+                nn.Linear(flat_dim, 384),
                 nn.LayerNorm(384), nn.GELU(), nn.Dropout(0.5),
-                nn.Linear(384, config["model"]["SpectraNet"]["class_order"])
+                nn.Linear(384, class_order)
             )
 
     def forward(self, x):
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
-        x = self.stage4(x)
-        x = self.stage5(x)  # [B, C, L]
+        x = self.all_stages(x)
 
         x_max = F.adaptive_max_pool1d(x,1).squeeze(-1)  # [B, C]
 
@@ -145,8 +155,8 @@ class SpectraNet(nn.Module):
     @staticmethod
     def to_tensor(data_dict):
         return (
-            torch.tensor(data_dict["data"]["flux"]),
-            torch.tensor(data_dict["data"]["label"]),
+            torch.tensor(data_dict["data"]["flux"]).to(torch.float32),
+            torch.tensor(data_dict["data"]["label"]).to(torch.int16),
             torch.tensor(data_dict["data"]["redshift"]).to(torch.float32),
         )
 

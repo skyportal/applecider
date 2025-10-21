@@ -10,7 +10,26 @@ fusion_router_dims = 128
 fusion_outdims = 32
 
 [model.SpectraNet]
+# whether the model will provide a redshift estimate (true)
+# or a classification based on `class_order` (false)
 redshift = false
+
+# location of the `.pt` data file
+file_path = false
+
+# misc model configs, must all be same length
+use_ln_stages = [true, true, true, true, true] # is this pointless?
 depths = [1, 1, 1, 1, 1]
-# need an actual default for this
+channels = [64, 128, 256, 512, 1024]
+kernel_sizes_per_stage = [
+    [3, 61, 1021],
+    [3, 31, 251],
+    [3, 15, 61],
+    [3, 11, 31],
+    [3, 7, 13]
+]
+
+# number of potential classes if redshift is false
 class_order = 9
+
+flat_dim = 3072

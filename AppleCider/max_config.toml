@@ -14,13 +14,7 @@ name = "AppleCider.models.hyrax_models.spectranet.SpectraNet"
 dataset_class = "AppleCider.hyrax_datasets.spectra_dataset.SpectraData"
 fields = ["flux", "label", "redshift"]
 
-[data_set]
-
-# Warning - using data_set.name to define the dataset class will be deprecated.
-
-# Please use [model_inputs.<friendly_name>.dataset_class] instead. See usage above.
-
-# name = "AppleCider.hyrax_datasets.spectra_dataset.SpectraData"
+file_path = "/Users/maxwest/data/train.pt"
 
 [train]
 epochs = 1
