@@ -15,15 +15,15 @@ class SpectraData(HyraxDataset, Dataset):
         # Used for casting the classification labels into an
         # integer that can be used as part of the criterion
         self.label_strings = {
-            'AGN' : 0,
-            'Cataclysmic' : 1,
-            'SN IIP' : 2,
-            'SN IIb': 3,
-            'SN IIn' : 4,
-            'SN Ia' : 5,
-            'SN Ib' : 6,
-            'SN Ic' : 7,
-            'Tidal Disruption Event' : 8
+            "AGN": 0,
+            "Cataclysmic": 1,
+            "SN IIP": 2,
+            "SN IIb": 3,
+            "SN IIn": 4,
+            "SN Ia": 5,
+            "SN Ib": 6,
+            "SN Ic": 7,
+            "Tidal Disruption Event": 8,
         }
 
         self._data = data_table["flux"]
@@ -68,13 +68,15 @@ class SpectraData(HyraxDataset, Dataset):
         from astropy.table import Table
 
         global ras, decs, filenames
-        return Table({
-            "flux": [f for f in self._data],
-            "object_id": self.ids(),
-            "label": self._label_idx,
-            "redshift": self._redshifts,
-            "file_path": self._file_paths,
-        })
+        return Table(
+            {
+                "flux": [f for f in self._data],
+                "object_id": self.ids(),
+                "label": self._label_idx,
+                "redshift": self._redshifts,
+                "file_path": self._file_paths,
+            }
+        )
 
     def __len__(self):
         return len(self._data)

@@ -6,28 +6,32 @@ import torch.nn.functional as F
 
 from hyrax.models import hyrax_model
 
+
 class SpectraNetBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_sizes,
-                use_ln=True, do_pool=False):
+    def __init__(
+        self, in_channels, out_channels, kernel_sizes, use_ln=True, do_pool=False
+    ):
         super().__init__()
         self.do_pool = do_pool
         self.use_ln = use_ln
         self.k = len(kernel_sizes)
         norm_channels = out_channels * self.k
 
-        self.convs = nn.ModuleList([
-            nn.Conv1d(in_channels, out_channels, kernel_size=k, padding=k // 2)
-            for k in kernel_sizes
-        ])
+        self.convs = nn.ModuleList(
+            [
+                nn.Conv1d(in_channels, out_channels, kernel_size=k, padding=k // 2)
+                for k in kernel_sizes
+            ]
+        )
         self.norm = (
-            nn.LayerNorm(norm_channels)
-            if use_ln else nn.BatchNorm1d(norm_channels)
+            nn.LayerNorm(norm_channels) if use_ln else nn.BatchNorm1d(norm_channels)
         )
 
         if do_pool:
             self.total_pooled_channels = norm_channels
             self.downsample = nn.Conv1d(norm_channels, out_channels, kernel_size=1)
             self.pool_max = nn.MaxPool1d(4)
+
     def forward(self, x):
         x = torch.cat([conv(x) for conv in self.convs], dim=1)
 
@@ -43,25 +47,29 @@ class SpectraNetBlock(nn.Module):
             x = self.pool_max(x)
         return x
 
+
 def make_stage(in_c, out_c, depth, kernel_sizes, use_ln=True, do_pool=True):
     print(in_c, out_c, depth, kernel_sizes, use_ln, do_pool)
     k = len(kernel_sizes)
     blocks = []
     for i in range(depth):
-        blocks.append(SpectraNetBlock(
-            in_channels=in_c if i == 0 else out_c * k,
-            out_channels=out_c,
-            kernel_sizes=kernel_sizes,
-            use_ln=use_ln,
-            do_pool=(do_pool if i == depth - 1 else False),
-        ))
+        blocks.append(
+            SpectraNetBlock(
+                in_channels=in_c if i == 0 else out_c * k,
+                out_channels=out_c,
+                kernel_sizes=kernel_sizes,
+                use_ln=use_ln,
+                do_pool=(do_pool if i == depth - 1 else False),
+            )
+        )
     return nn.Sequential(*blocks), k
+
 
 @hyrax_model
 class SpectraNet(nn.Module):
     def __init__(self, config=None, data_sample=None):
         super().__init__()
-        
+
         self.config = config
 
         spectranet_config = config["model"]["SpectraNet"]
@@ -75,10 +83,10 @@ class SpectraNet(nn.Module):
         class_order = spectranet_config["class_order"]
 
         if (
-            len(depths) !=
-            len(use_ln_stages) !=
-            len(channels) !=
-            len(kernel_sizes_per_stage)
+            len(depths)
+            != len(use_ln_stages)
+            != len(channels)
+            != len(kernel_sizes_per_stage)
         ):
             raise ValueError(
                 "depths, use_ln_stages, channels, and kernel_sizes_per_stage must be the same length."
@@ -113,20 +121,24 @@ class SpectraNet(nn.Module):
         if self.redshift:
             self.regressor = nn.Sequential(
                 nn.Linear(flat_dim, 384),
-                nn.LayerNorm(384), nn.GELU(), nn.Dropout(0.5),
-                nn.Linear(384, 1)
+                nn.LayerNorm(384),
+                nn.GELU(),
+                nn.Dropout(0.5),
+                nn.Linear(384, 1),
             )
         else:
             self.classifier = nn.Sequential(
                 nn.Linear(flat_dim, 384),
-                nn.LayerNorm(384), nn.GELU(), nn.Dropout(0.5),
-                nn.Linear(384, class_order)
+                nn.LayerNorm(384),
+                nn.GELU(),
+                nn.Dropout(0.5),
+                nn.Linear(384, class_order),
             )
 
     def forward(self, x):
         x = self.all_stages(x)
 
-        x_max = F.adaptive_max_pool1d(x,1).squeeze(-1)  # [B, C]
+        x_max = F.adaptive_max_pool1d(x, 1).squeeze(-1)  # [B, C]
 
         x_fused = torch.cat([x_max], dim=1)  # [B, 3C]
 
@@ -159,6 +171,3 @@ class SpectraNet(nn.Module):
             torch.tensor(data_dict["data"]["label"]).to(torch.int16),
             torch.tensor(data_dict["data"]["redshift"]).to(torch.float32),
         )
-
-
-
