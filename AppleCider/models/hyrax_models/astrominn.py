@@ -124,7 +124,7 @@ class AstroMiNN(nn.Module):
         #! Hardcoded '4' should probably dynamically extracted from `data_sample`???
         self.image_tower = SplitHeadConvNeXt(
             pretrained=False, # False if training from scratch
-            in_chans=4, #! Critical: override default 3-channel input
+            in_chans=3, #! Critical: override default 3-channel input
             outdims=self.towers_outdims # Your task's number of classes
         )
 
@@ -152,7 +152,7 @@ class AstroMiNN(nn.Module):
         self.total_correct_predictions = 0
         self.total_predictions = 0
 
-    def forward(self, metadata, image):
+    def forward(self, batch):
         """Processes input metadata and optional image data through specialized towers,
         combines features using a Mixture of Experts (MoE) approach, and returns
         classification logits with expert weighting information.
@@ -177,6 +177,8 @@ class AstroMiNN(nn.Module):
             - 'fusion_weights': torch.Tensor
                 Same as expert_weights (maintained for compatibility)
         """
+
+        metadata, image, _ = batch
 
         # Process all metadata features through respective towers
         nsta = self.nst1_tower(metadata[:, [0,2]]) # Nearest source A features
@@ -208,10 +210,13 @@ class AstroMiNN(nn.Module):
             expert_mask = (topk_indices == expert_idx).any(dim=-1) # [B]   # 'ResidualTowerBlock'
 
             if expert_mask.any():
+                expert_mask = expert_mask.to(moe_output.device)
                 # Get weights for this expert [M] where M=sum(expert_mask)
                 weights = topk_weights[expert_mask, (topk_indices[expert_mask] == expert_idx).nonzero()[:, 1]]
+                weights = weights.to(moe_output.device)
                 # Compute expert output only for relevant samples
                 expert_out = expert(all_feats[expert_mask]) # [M, num_classes]
+                expert_out = expert_out.to(moe_output.device)
                 # Weighted contribution
                 moe_output[expert_mask] += weights.unsqueeze(-1) * expert_out
 
@@ -235,14 +240,11 @@ class AstroMiNN(nn.Module):
         Based on that file, the optimizer and criterion functions appear to be
         configurable, but it's not clear which one are actually used.
         """
-
-        # This is a placeholder until I implement the to_tensor method.
-        print(batch)
-        metadata, images, labels = batch
+        _, _, labels = batch
 
         self.optimizer.zero_grad()
 
-        logits = self.forward(metadata, images)
+        logits = self.forward(batch)
 
         loss = self.criterion(logits, labels)
 
@@ -265,10 +267,8 @@ class AstroMiNN(nn.Module):
         training or inference."""
         data = data_dict['data']
 
-        columns = [chr(i) for i in range(ord('a'), ord('z')+1)]
-
         # horizontally concatenate metadata columns
-        metadata = torch.tensor(np.hstack([data[c] for c in columns]))
+        metadata = torch.tensor(data['metadata']).float()
         images = torch.tensor(data['image']).float()
-        labels = torch.tensor(data['label']).long()
+        labels = torch.tensor(data['real_target']).long()
         return (metadata, images, labels)
