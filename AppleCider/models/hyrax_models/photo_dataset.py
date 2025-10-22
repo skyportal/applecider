@@ -14,6 +14,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         self.filenames = sorted(list(Path(self.data_location).glob('*.npz')))
         self.manifest_df = pd.read_csv(config["data_set"]["manifest_path"])
         self.horizon = horizon
+        self.st = np.load(Path(config["data_set"]["stats_path"]))
 
         # Taxonomy setup
         broad_classes = ["SNI", "SNII", "CV", "AGN", "TDE"]
@@ -38,6 +39,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         return self.get_photometry(idx)
 
     def get_label(self, idx):
+        """get ID label for a specific index"""
         # Find the row in the manifest
         row = self.manifest_df.iloc[idx]
 
@@ -50,6 +52,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         return self.id2broad_id[int(row.label)]
 
     def get_photometry(self, idx):
+        """get photometry tensor for a specific index"""
         data = np.load(self.filenames[idx], allow_pickle=True)["data"]
 
         # Grab features from array slices
@@ -67,36 +70,40 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         # Result is a (L, 7) tensor (L = sequence length)
         return torch.from_numpy(np.concatenate([vec4, one_hot_band], 1))  # (L, 7)
 
+    def get_mean(self, idx):
+        """get feature means from stats file"""
+        return self.st['mean']
+
+    def get_std(self, idx):
+        """get feature standard deviations from stats file"""
+        return self.st['std']
+
     def __len__(self):
         return len(self.filenames)
 
 
-def load_stats(path: Path):
-    st = np.load(path)
-    return (torch.from_numpy(st['mean']), torch.from_numpy(st['std']))
-
-
 def collate(batch):
     '''custom collate function for photo events dataset'''
-    # For pre-training
-    # mean, std = load_stats(Path(cfg.output_dir) / cfg.stats_file)
-    mean = 0
-    std = 1
 
     seqs = []
     labels = []
     for i in batch:
         seqs += [i["data"]["photometry"]]
-        labels += [i["data"]["label"]]  
+        labels += [i["data"]["label"]]
 
     lens = [s.size(0) for s in seqs]
     pad  = pad_sequence(seqs, batch_first=True)              # (B, L, 7)
     mask = torch.stack([torch.cat([torch.zeros(l), torch.ones(pad.size(1)-l)]) for l in lens]).bool()
-    cont = (pad[..., :4] - mean) / (std + 1e-8)
 
     # adjust padding mask to account for CLS at idx=0
     pad_mask = torch.cat(
             [torch.zeros(len(batch), 1, device=mask.device, dtype=torch.bool),
              mask], dim=1
         )
-    return {"data": {"photometry": torch.cat([cont, pad[..., 4:]], -1), "label": torch.tensor(labels), "pad_mask": torch.tensor(pad_mask)}}
+    return {"data": {"photometry": pad,
+                     "label": torch.tensor(labels),
+                     "pad_mask": torch.tensor(pad_mask),
+                     "mean": torch.tensor(batch[0]["data"]["mean"]),
+                     "std": torch.tensor(batch[0]["data"]["std"]),
+                     }
+            }

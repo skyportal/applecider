@@ -38,9 +38,7 @@ class HyraxBaselineCLS(nn.Module):
         if self.classification:
             self.fc = nn.Linear(model_config['d_model'], model_config['num_classes'])
 
-        #self.pad_mask = model_config['pad_mask']
-
-    def forward(self, x, pad):
+    def forward(self, x):
         """
         x: (B, L, 7)  - the raw event tensor from build_event_tensor
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
@@ -63,7 +61,7 @@ class HyraxBaselineCLS(nn.Module):
         hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
 
         # encode
-        z = self.encoder(hte, src_key_padding_mask=pad)  # (B, L+1, d_model)
+        z = self.encoder(hte, src_key_padding_mask=self.mask)  # (B, L+1, d_model)
 
         output = self.norm(z[:, 0])  # (B, d_model )
 
@@ -88,13 +86,13 @@ class HyraxBaselineCLS(nn.Module):
         Current loss value : dict
             Dictionary containing the loss value for the current batch.
         """
-        #import pdb; pdb.set_trace()
         data = batch[0]
         labels = batch[1]
-        mask = batch[2]
+        self.mask = batch[2]
         self.optimizer.zero_grad()
 
-        decoded = self.forward(data, pad=mask)
+        decoded = self.forward(data)
+        #decoded = self.forward(data, pad=mask)
         loss = self.criterion(decoded, labels)
         loss.backward()
         self.optimizer.step()
@@ -123,6 +121,9 @@ class HyraxBaselineCLS(nn.Module):
         """
         # Assuming reading in a data dictionary from an alert npy file
         photo_tensor, label_tensor = data_dict["data"]["photometry"], data_dict["data"]["label"]
+        # Use mean and std from data_dict to normalize continuous features
+        photo_tensor[..., :4] = (photo_tensor[..., :4] - data_dict["data"]["mean"]) / (data_dict["data"]["std"] + 1e-8)
+
         if "pad_mask" in data_dict["data"].keys():
             mask_tensor = data_dict["data"]["pad_mask"]
             return (photo_tensor, label_tensor, mask_tensor)
