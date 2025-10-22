@@ -1,5 +1,3 @@
-import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,6 +9,9 @@ class SpectraNetBlock(nn.Module):
     def __init__(
         self, in_channels, out_channels, kernel_sizes, use_ln=True, do_pool=False
     ):
+        """Basic layer block for SpectraNet. Typically generated from parameters
+        through the `make_stage` function and as part of the `SpectraNet` initialization.
+        """
         super().__init__()
         self.do_pool = do_pool
         self.use_ln = use_ln
@@ -48,15 +49,39 @@ class SpectraNetBlock(nn.Module):
         return x
 
 
-def make_stage(in_c, out_c, depth, kernel_sizes, use_ln=True, do_pool=True):
-    print(in_c, out_c, depth, kernel_sizes, use_ln, do_pool)
+def make_stage(in_channel, out_channel, depth, kernel_sizes, use_ln=True, do_pool=True):
+    """Function to create one layer of the SpectraNet model.
+
+    Parameters
+    ----------
+    in_channel : `int`
+        the number of input channels.
+    out_channel : `int`
+        the number of output channels.
+    depth : `int`
+        depth of the layer, i.e. how many
+        times it's repeated sequentially.
+    kernel_sizes : `list` of `list` of `int`s
+        the kernel sizes convolution.
+    use_ln : `bool`
+        whether to use layer normalization for
+        this layer. Default `True`.
+    do_pool : `bool`
+        whether to do pooling with this layer.
+        typically disabled only for the final layer.
+        Default `True`.
+
+    Returns
+    -------
+    An `nn.Sequential` of `SpectraNetBlock`s and list of the number of kernels per layer.
+    """
     k = len(kernel_sizes)
     blocks = []
     for i in range(depth):
         blocks.append(
             SpectraNetBlock(
-                in_channels=in_c if i == 0 else out_c * k,
-                out_channels=out_c,
+                in_channels=in_channel if i == 0 else out_channel * k,
+                out_channels=out_channel,
                 kernel_sizes=kernel_sizes,
                 use_ln=use_ln,
                 do_pool=(do_pool if i == depth - 1 else False),
@@ -67,6 +92,11 @@ def make_stage(in_c, out_c, depth, kernel_sizes, use_ln=True, do_pool=True):
 
 @hyrax_model
 class SpectraNet(nn.Module):
+    """Model for training spectra data.
+    Can be configured to output either a transient
+    classification or give a redshift score prediction
+    (see the "AppleCider/default_config.toml" file).
+    """
     def __init__(self, config=None, data_sample=None):
         super().__init__()
 
@@ -148,9 +178,6 @@ class SpectraNet(nn.Module):
             return self.classifier(x_fused)
 
     def train_step(self, batch):
-        """Simple placeholder train step for Hyrax integration
-        based on my kbmod-ml version lol
-        """
         # spectranet uses the `train_one_epoch` function in utils.py
         inputs, labels, redshifts = batch
 
@@ -166,6 +193,9 @@ class SpectraNet(nn.Module):
 
     @staticmethod
     def to_tensor(data_dict):
+        """This method will receive a dictionary
+        of data and should convert it to the relevant tensors needed for either
+        training or inference."""
         return (
             torch.tensor(data_dict["data"]["flux"]).to(torch.float32),
             torch.tensor(data_dict["data"]["label"]).to(torch.int16),
