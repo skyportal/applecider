@@ -97,6 +97,7 @@ class SpectraNet(nn.Module):
     classification or give a redshift score prediction
     (see the "AppleCider/default_config.toml" file).
     """
+
     def __init__(self, config=None, data_sample=None):
         super().__init__()
 
