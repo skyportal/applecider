@@ -16,7 +16,7 @@ class HyraxBaselineCLS(nn.Module):
 
         self.config = config
         self._criterion = FocalLoss
-        
+
         model_config = config["model"]["BaselineCLS"]
         #self.optimizer = torch.optim.AdamW(self.parameters(), lr=model_config["lr"], weight_decay=model_config["weight_decay"])
         # Use AdamW eventually
@@ -38,7 +38,7 @@ class HyraxBaselineCLS(nn.Module):
         if self.classification:
             self.fc = nn.Linear(model_config['d_model'], model_config['num_classes'])
 
-    def forward(self, x):
+    def forward(self, x, pad=None):
         """
         x: (B, L, 7)  - the raw event tensor from build_event_tensor
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
@@ -61,13 +61,13 @@ class HyraxBaselineCLS(nn.Module):
         hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
 
         # encode
-        z = self.encoder(hte, src_key_padding_mask=self.mask)  # (B, L+1, d_model)
+        z = self.encoder(hte, src_key_padding_mask=pad)  # (B, L+1, d_model)
 
         output = self.norm(z[:, 0])  # (B, d_model )
 
         if self.classification:
             # classification from the CLS token
-            output = self.fc(output)  # (B, num_classes)     
+            output = self.fc(output)  # (B, num_classes)
 
         return output
 
@@ -88,11 +88,10 @@ class HyraxBaselineCLS(nn.Module):
         """
         data = batch[0]
         labels = batch[1]
-        self.mask = batch[2]
+        mask = batch[2]
         self.optimizer.zero_grad()
 
-        decoded = self.forward(data)
-        #decoded = self.forward(data, pad=mask)
+        decoded = self.forward(data, pad=mask)
         loss = self.criterion(decoded, labels)
         loss.backward()
         self.optimizer.step()

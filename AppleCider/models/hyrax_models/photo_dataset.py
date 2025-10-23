@@ -102,7 +102,7 @@ def collate(batch):
         )
     return {"data": {"photometry": pad,
                      "label": torch.tensor(labels),
-                     "pad_mask": torch.tensor(pad_mask),
+                     "pad_mask": pad_mask,
                      "mean": torch.tensor(batch[0]["data"]["mean"]),
                      "std": torch.tensor(batch[0]["data"]["std"]),
                      }
