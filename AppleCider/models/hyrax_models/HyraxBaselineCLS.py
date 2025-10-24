@@ -44,12 +44,15 @@ class HyraxBaselineCLS(nn.Module):
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
         pad_mask: (B, L) boolean
         """
-        B, L, _ = x.shape
+        data = x[0]
+        pad = x[2]
+
+        B, L, _ = data.shape
 
         # project into model dim
-        h = self.in_proj(x)                     # (B, L, d_model)
+        h = self.in_proj(data)                     # (B, L, d_model)
         # extract the *continuous* log1p dt feature
-        t = x[..., 0]
+        t = data[..., 0]
 
         # compute the learned time embedding:
         te = self.time2vec(t)
@@ -86,12 +89,11 @@ class HyraxBaselineCLS(nn.Module):
         Current loss value : dict
             Dictionary containing the loss value for the current batch.
         """
-        data = batch[0]
+
         labels = batch[1]
-        mask = batch[2]
         self.optimizer.zero_grad()
 
-        decoded = self.forward(data, pad=mask)
+        decoded = self.forward(batch)
         loss = self.criterion(decoded, labels)
         loss.backward()
         self.optimizer.step()
@@ -126,7 +128,10 @@ class HyraxBaselineCLS(nn.Module):
         if "pad_mask" in data_dict["data"].keys():
             mask_tensor = data_dict["data"]["pad_mask"]
             return (photo_tensor, label_tensor, mask_tensor)
-        return (photo_tensor, label_tensor)
+
+        # Generate all-false padding mask if not provided, useful for infer step
+        false_mask = torch.zeros(photo_tensor.size(0), photo_tensor.size(1), dtype=torch.bool)
+        return (photo_tensor, label_tensor, false_mask)
 
 class FocalLoss(nn.Module):
     def __init__(self, gamma: float = 2.0, alpha: torch.Tensor = None, eps: float = 0, reduction: str = 'mean'): #eps=0.1

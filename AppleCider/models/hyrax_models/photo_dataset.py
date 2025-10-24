@@ -28,7 +28,6 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
                                 8: 3,  # AGN -> AGN
                                 9: 4,  # Tidal Disruption Event -> TDE
                                 }
-        self.id2broad_id = {i: broad2id[orig2broad[name]] for i, name in enumerate(subclass_id2name)}
 
         # Do we need to define test vs train data?
         super().__init__(config)
@@ -54,6 +53,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
     def get_photometry(self, idx):
         """get photometry tensor for a specific index"""
         data = np.load(self.filenames[idx], allow_pickle=True)["data"]
+        # TODO: Consider caching data to avoid duplicate loads in each epoch
 
         # Grab features from array slices
         dt = data[:, 0]
