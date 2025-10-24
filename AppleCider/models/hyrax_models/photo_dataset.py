@@ -12,24 +12,22 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
     def __init__(self, config: dict, data_location: Union[Path, str] = None, horizon: float = 10.0):
         self.data_location = data_location
         self.filenames = sorted(list(Path(self.data_location).glob('*.npz')))
-        #import pdb;pdb.set_trace()
         self.manifest_df = pd.read_csv(config["data_set"]["PhotoEventsDataset"]["manifest_path"])
         self.horizon = horizon
         self.st = np.load(Path(config["data_set"]["PhotoEventsDataset"]["stats_path"]))
 
-        # Taxonomy setup
-        broad_classes = ["SNI", "SNII", "CV", "AGN", "TDE"]
-        orig2broad = {
-                "SN Ia": "SNI", "SN Ib": "SNI", "SN Ic": "SNI",
-                "SN II": "SNII", "SN IIP": "SNII", "SN IIn": "SNII", "SN IIb": "SNII",
-                "Cataclysmic": "CV", "AGN": "AGN", "Tidal Disruption Event": "TDE",
-                }
-
-        broad2id = {c: i for i, c in enumerate(broad_classes)}
-        subclass_id2name = [
-            "SN Ia", "SN Ib", "SN Ic", "SN II", "SN IIP", "SN IIn", "SN IIb",
-            "Cataclysmic", "AGN", "Tidal Disruption Event"
-            ]
+        # Map original subclass IDs to broader classes
+        self.taxonomy_mapper = {0: 0,  # SN Ia -> SNI
+                                1: 0,  # SN Ib -> SNI
+                                2: 0,  # SN Ic -> SNI
+                                3: 1,  # SN II -> SNII
+                                4: 1,  # SN IIP -> SNII
+                                5: 1,  # SN IIn -> SNII
+                                6: 1,  # SN IIb -> SNII
+                                7: 2,  # Cataclysmic -> CV
+                                8: 3,  # AGN -> AGN
+                                9: 4,  # Tidal Disruption Event -> TDE
+                                }
         self.id2broad_id = {i: broad2id[orig2broad[name]] for i, name in enumerate(subclass_id2name)}
 
         # Do we need to define test vs train data?
@@ -49,7 +47,9 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         """get ID label for a specific index"""
         # Find the row in the manifest
         row = self.manifest_df.iloc[idx]
-        return self.id2broad_id[int(row.label)]
+        #import pdb;pdb.set_trace()
+        return self.taxonomy_mapper[row.label]
+        #return self.id2broad_id[int(row.label)]
 
     def get_photometry(self, idx):
         """get photometry tensor for a specific index"""
