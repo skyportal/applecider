@@ -9,12 +9,61 @@ fusion_hidden_dims = 128
 fusion_router_dims = 128
 fusion_outdims = 32
 
+cnn_lr = 2
+cnn_decay = 5e-2
+psf_lr = 0.5
+psf_decay = 5e-2
+mag_lr =  2
+mag_decay =  0.0
+
+lc_lr =  2
+lc_decay =  0.05
+spatial_lr = 2
+spatial_decay = 0.0
+
+coord_lr =  0.5
+coord_decay =  0.0
+
+nst1_lr = 2
+nst1_decay = 0.0
+nst2_lr = 2
+nst2_decay = 0.0
+
+fusion_lr = 1
+fusion_decay = 1e-2
+fusion_beta1 =  0.9
+fusion_beta2 =  0.999
+
+router_decay = 0.0
+router_lr = 1.5
+router_beta1 = 0.9
+router_beta2 = 0.999
+router_lr_2 = 1
+router_beta1_2 = 0.95
+router_beta2_2 = 0.99
+
+beta1 = 0.9
+beta2 = 0.999
+eps = 5e-10
+
 [data_set.ImageAndMetadataDataset]
-alert = 0  # defines the maximum number of alerts per sample to work with. Use <= 0 for all available alerts.
+# Defines the maximum number of alerts per sample to work with. Use <= 0 for all available alerts.
+alert = 0
+
 all_samples = false
+
 augment = true
-classes = [['SN Ia','SN Ic','SN Ib'],[ 'SN IIP', 'SN IIn','SN II'], ['Cataclysmic'], ['AGN'], ['Tidal Disruption Event']]
+
+classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN','Tidal Disruption Event']
+
 cutout_size = 63
+
+# If enabled, images will be cached in memory after first load to speed up subsequent epochs
+# This may lead to high memory usage depending, and out of memory errors on large datasets
+enable_image_cache = false
+
 image_norm = false  #? What should the default be here?
+
 patch_size = [32, 32]  #? Is it possible to consolidate this with cutout_size?
+
 tags = []

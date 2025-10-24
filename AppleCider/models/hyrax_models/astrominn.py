@@ -152,6 +152,44 @@ class AstroMiNN(nn.Module):
         self.total_correct_predictions = 0
         self.total_predictions = 0
 
+        #! In the original, the CEL includes weight=course_weights
+        self.this_criterion = nn.CrossEntropyLoss()
+
+        LR = 1.6e-4
+        config = self.config['model']['AstroMiNN']
+        self.this_optimizer = torch.optim.AdamW([
+            # Image/Coord towers - moderate regularization
+            {'params': self.image_tower.parameters(), 'weight_decay': config['cnn_decay'], 'lr': LR*config['cnn_lr']},
+
+            # Metadata towers - higher regularization (more prone to overfitting)
+            {'params': self.psf_tower.parameters(), 'weight_decay': config['psf_decay'], 'lr': LR*config['psf_lr']},
+            {'params': self.lc_tower.parameters(), 'weight_decay': config['lc_decay'], 'lr': LR*config['lc_lr']},
+            {'params': self.mag_tower.parameters(), 'weight_decay': config['mag_decay'], 'lr': LR*config['mag_lr']},
+            {'params': self.spatial_tower.parameters(), 'weight_decay': config['spatial_decay'], 'lr': LR*config['spatial_lr']},
+            {'params': self.coord_tower.parameters(), 'weight_decay': config['nst1_decay'], 'lr': LR*config['nst1_lr']},
+            {'params': self.nst1_tower.parameters(), 'weight_decay': config['nst1_decay'], 'lr': LR*config['nst1_lr']},
+            {'params': self.nst2_tower.parameters(), 'weight_decay': config['nst2_decay'], 'lr': LR*config['nst2_lr']},
+
+            # Currently using mega tower as the router essentially
+            {'params': self.mega_tower.parameters(), 'weight_decay': config['lc_decay'], 'lr': LR*config['lc_lr']},
+
+            # Fusion components
+            {'params': self.fusion_experts.parameters(),
+            'weight_decay': config['fusion_decay'],  # Reduced from 5e-4
+            'lr': LR*config['fusion_lr'],
+            'betas':(config['fusion_beta1'], config['fusion_beta2'])
+            },
+            {'params': self.fusion_router.parameters(),
+            'weight_decay': config['router_decay'],
+            'lr':LR*config['router_lr'],
+            'betas':(config['router_beta1'], config['router_beta2'])
+            }
+
+            ], lr=LR,
+            betas=(config['beta1'], config['beta2']),
+            eps=config['eps']
+        )
+
     def forward(self, batch):
         """Processes input metadata and optional image data through specialized towers,
         combines features using a Mixture of Experts (MoE) approach, and returns
@@ -201,6 +239,7 @@ class AstroMiNN(nn.Module):
 
         #! Is the hardcoded '5' here the num_classes from the config???
         moe_output = torch.zeros(metadata.size(0), 5)
+        moe_output = moe_output.to(image.device)
 
         topk_weights, topk_indices = torch.topk(fusion_weights, k=2, dim=-1)  # [B, k]
 
@@ -222,53 +261,38 @@ class AstroMiNN(nn.Module):
 
         return moe_output
 
-    def _update_stats(self, loss, logits, labels):
-        probabilities = torch.nn.functional.softmax(logits, dim=1)
-        _, predicted_labels = torch.max(probabilities, dim=1)
-        correct_predictions = (predicted_labels == labels).sum().item()
-
-        self.total_correct_predictions += correct_predictions
-        self.total_predictions += labels.size(0)
+    def _update_stats(self, loss):
         self.total_loss.append(loss.item())
 
     def _calculate_stats(self):
-        return sum(self.total_loss) / len(self.total_loss), self.total_correct_predictions / self.total_predictions
+        return sum(self.total_loss) / len(self.total_loss)
 
     def train_step(self, batch):
-        """This method has been created based on the logic found in the file
-        `.../AppleCider/core/trainer.py`.
-        Based on that file, the optimizer and criterion functions appear to be
-        configurable, but it's not clear which one are actually used.
-        """
         _, _, labels = batch
 
-        self.optimizer.zero_grad()
+        self.this_optimizer.zero_grad()
 
         logits = self.forward(batch)
 
-        loss = self.criterion(logits, labels)
+        loss = self.this_criterion(logits, labels)
 
-        self._update_stats(loss, logits, labels)
+        self._update_stats(loss)
 
         loss.backward()
 
-        self.optimizer.step()
+        self.this_optimizer.step()
 
         # in trainer.py this is calculated per epoch, here we calculate it per batch
-        loss, acc = self._calculate_stats()
+        loss = self._calculate_stats()
 
-        return {'loss': loss, 'acc': acc}
+        return {'loss': loss}
 
 
     @staticmethod
     def to_tensor(data_dict):
-        """Place holder for use with Hyrax. This method will receive a dictionary
-        of data and should convert it to the relevant tensors needed for either
-        training or inference."""
         data = data_dict['data']
 
-        # horizontally concatenate metadata columns
-        metadata = torch.tensor(data['metadata']).float()
-        images = torch.tensor(data['image']).float()
-        labels = torch.tensor(data['real_target']).long()
+        metadata = torch.as_tensor(data['metadata'], dtype=torch.float32)
+        images = torch.as_tensor(data['image'], dtype=torch.float32)
+        labels = torch.as_tensor(data['target'], dtype=torch.float32)
         return (metadata, images, labels)
