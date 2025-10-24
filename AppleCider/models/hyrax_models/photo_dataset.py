@@ -12,9 +12,10 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
     def __init__(self, config: dict, data_location: Union[Path, str] = None, horizon: float = 10.0):
         self.data_location = data_location
         self.filenames = sorted(list(Path(self.data_location).glob('*.npz')))
-        self.manifest_df = pd.read_csv(config["data_set"]["manifest_path"])
+        #import pdb;pdb.set_trace()
+        self.manifest_df = pd.read_csv(config["data_set"]["PhotoEventsDataset"]["manifest_path"])
         self.horizon = horizon
-        self.st = np.load(Path(config["data_set"]["stats_path"]))
+        self.st = np.load(Path(config["data_set"]["PhotoEventsDataset"]["stats_path"]))
 
         # Taxonomy setup
         broad_classes = ["SNI", "SNII", "CV", "AGN", "TDE"]
@@ -35,8 +36,8 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         super().__init__(config)
 
     def __getitem__(self, idx):
-        # load the data from disk
-        return self.get_photometry(idx)
+        # getting happens via the getter methods below
+        pass
     
     def get_id(self,idx):
         """get unique identifier for a specific index"""
@@ -48,13 +49,6 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         """get ID label for a specific index"""
         # Find the row in the manifest
         row = self.manifest_df.iloc[idx]
-
-        # Manifest contains a path to another file that should live in data_location
-        f_name = row.filepath.split("/")[-1]
-        raw = np.load(Path(self.data_location) / f_name, allow_pickle=True)
-        arr = raw['data'] if isinstance(raw, np.lib.npyio.NpzFile) else raw
-        if self.horizon:
-            arr = arr[arr[:, 0] <= self.horizon]
         return self.id2broad_id[int(row.label)]
 
     def get_photometry(self, idx):

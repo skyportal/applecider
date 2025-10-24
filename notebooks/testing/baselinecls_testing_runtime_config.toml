@@ -5,7 +5,7 @@ name = "AppleCider.models.hyrax_models.HyraxBaselineCLS.HyraxBaselineCLS"
 batch_size = 5
 collate_fn = "AppleCider.models.hyrax_models.photo_dataset.collate"
 
-[data_set]
+[data_set.PhotoEventsDataset]
 manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
 stats_path = "/Users/dbranton/lincc/incubators/photo_events/feature_stats_day100.npz"
 
