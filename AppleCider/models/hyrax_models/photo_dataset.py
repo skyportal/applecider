@@ -37,6 +37,12 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
     def __getitem__(self, idx):
         # load the data from disk
         return self.get_photometry(idx)
+    
+    def get_id(self,idx):
+        """get unique identifier for a specific index"""
+        # Find the row in the manifest
+        return self.manifest_df.iloc[idx]["obj_id"]
+
 
     def get_label(self, idx):
         """get ID label for a specific index"""
