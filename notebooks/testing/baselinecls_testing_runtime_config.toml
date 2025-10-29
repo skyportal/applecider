@@ -1,0 +1,24 @@
+[model]
+name = "AppleCider.models.hyrax_models.HyraxBaselineCLS.HyraxBaselineCLS"
+
+[data_loader]
+batch_size = 5
+collate_fn = "AppleCider.models.hyrax_models.photo_dataset.collate"
+
+[data_set.PhotoEventsDataset]
+manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
+stats_path = "/Users/dbranton/lincc/incubators/photo_events/feature_stats_day100.npz"
+
+[model_inputs]
+[model_inputs.data]
+dataset_class = "AppleCider.models.hyrax_models.photo_dataset.PhotoEventsDataset"
+data_location = "/Users/dbranton/lincc/incubators/photo_events/train/"
+fields = ["photometry", "label", "mean", "std"]
+primary_id_field = "id"
+
+[train]
+#The number of epochs to train for.
+epochs = 2
+
+[optimizer]
+name = "torch.optim.Adam"
