@@ -13,7 +13,7 @@
 
 <br><br>
 ### `AppleCiDEr` in ZTF production
-<img align="center" src="https://github.com/skyportal/applecider/blob/main/img/ZTF_Production_use_over_black.png" alt="ZTF production diagram" height="550px">
+<img align="center" src="https://github.com/skyportal/applecider/blob/main/docs/static/ZTF_Production_use_over_black.png" alt="ZTF production diagram" height="550px">
 
 
 <br><br>
