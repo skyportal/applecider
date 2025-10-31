@@ -294,5 +294,5 @@ class AstroMiNN(nn.Module):
 
         metadata = torch.as_tensor(data['metadata'], dtype=torch.float32)
         images = torch.as_tensor(data['image'], dtype=torch.float32)
-        labels = torch.as_tensor(data['target'], dtype=torch.float32)
+        labels = torch.as_tensor(data['target'], dtype=torch.long)
         return (metadata, images, labels)
