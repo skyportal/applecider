@@ -54,7 +54,7 @@ all_samples = false
 
 augment = true
 
-classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN','Tidal Disruption Event']
+classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN', 'Tidal Disruption Event']
 
 cutout_size = 63
 
