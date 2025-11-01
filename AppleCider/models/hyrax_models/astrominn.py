@@ -244,6 +244,9 @@ class AstroMiNN(nn.Module):
         topk_weights, topk_indices = torch.topk(fusion_weights, k=2, dim=-1)  # [B, k]
 
         # Process only through selected experts
+        #! NOTE - In this for loop many tensors are created and moved between devices.
+        #! This can be inefficient - we should consider optimizing this if this
+        #! model is going to be used frequently.
         for expert_idx, expert in enumerate(self.fusion_experts):
             # Mask for samples where this expert is in top-k
             expert_mask = (topk_indices == expert_idx).any(dim=-1) # [B]   # 'ResidualTowerBlock'
