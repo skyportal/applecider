@@ -124,7 +124,7 @@ class AstroMiNN(nn.Module):
         #! Hardcoded '4' should probably dynamically extracted from `data_sample`???
         self.image_tower = SplitHeadConvNeXt(
             pretrained=False, # False if training from scratch
-            in_chans=4, #! Critical: override default 3-channel input
+            in_chans=3, #! Critical: override default 3-channel input
             outdims=self.towers_outdims # Your task's number of classes
         )
 
@@ -152,7 +152,45 @@ class AstroMiNN(nn.Module):
         self.total_correct_predictions = 0
         self.total_predictions = 0
 
-    def forward(self, metadata, image):
+        #! In the original, the CEL includes weight=course_weights
+        self.this_criterion = nn.CrossEntropyLoss()
+
+        LR = 1.6e-4
+        config = self.config['model']['AstroMiNN']
+        self.this_optimizer = torch.optim.AdamW([
+            # Image/Coord towers - moderate regularization
+            {'params': self.image_tower.parameters(), 'weight_decay': config['cnn_decay'], 'lr': LR*config['cnn_lr']},
+
+            # Metadata towers - higher regularization (more prone to overfitting)
+            {'params': self.psf_tower.parameters(), 'weight_decay': config['psf_decay'], 'lr': LR*config['psf_lr']},
+            {'params': self.lc_tower.parameters(), 'weight_decay': config['lc_decay'], 'lr': LR*config['lc_lr']},
+            {'params': self.mag_tower.parameters(), 'weight_decay': config['mag_decay'], 'lr': LR*config['mag_lr']},
+            {'params': self.spatial_tower.parameters(), 'weight_decay': config['spatial_decay'], 'lr': LR*config['spatial_lr']},
+            {'params': self.coord_tower.parameters(), 'weight_decay': config['nst1_decay'], 'lr': LR*config['nst1_lr']},
+            {'params': self.nst1_tower.parameters(), 'weight_decay': config['nst1_decay'], 'lr': LR*config['nst1_lr']},
+            {'params': self.nst2_tower.parameters(), 'weight_decay': config['nst2_decay'], 'lr': LR*config['nst2_lr']},
+
+            # Currently using mega tower as the router essentially
+            {'params': self.mega_tower.parameters(), 'weight_decay': config['lc_decay'], 'lr': LR*config['lc_lr']},
+
+            # Fusion components
+            {'params': self.fusion_experts.parameters(),
+            'weight_decay': config['fusion_decay'],  # Reduced from 5e-4
+            'lr': LR*config['fusion_lr'],
+            'betas':(config['fusion_beta1'], config['fusion_beta2'])
+            },
+            {'params': self.fusion_router.parameters(),
+            'weight_decay': config['router_decay'],
+            'lr':LR*config['router_lr'],
+            'betas':(config['router_beta1'], config['router_beta2'])
+            }
+
+            ], lr=LR,
+            betas=(config['beta1'], config['beta2']),
+            eps=config['eps']
+        )
+
+    def forward(self, batch):
         """Processes input metadata and optional image data through specialized towers,
         combines features using a Mixture of Experts (MoE) approach, and returns
         classification logits with expert weighting information.
@@ -178,6 +216,8 @@ class AstroMiNN(nn.Module):
                 Same as expert_weights (maintained for compatibility)
         """
 
+        metadata, image, _ = batch
+
         # Process all metadata features through respective towers
         nsta = self.nst1_tower(metadata[:, [0,2]]) # Nearest source A features
         nstb = self.nst2_tower(metadata[:, [1,3]]) # Nearest source B features
@@ -199,6 +239,7 @@ class AstroMiNN(nn.Module):
 
         #! Is the hardcoded '5' here the num_classes from the config???
         moe_output = torch.zeros(metadata.size(0), 5)
+        moe_output = moe_output.to(image.device)
 
         topk_weights, topk_indices = torch.topk(fusion_weights, k=2, dim=-1)  # [B, k]
 
@@ -208,67 +249,50 @@ class AstroMiNN(nn.Module):
             expert_mask = (topk_indices == expert_idx).any(dim=-1) # [B]   # 'ResidualTowerBlock'
 
             if expert_mask.any():
+                expert_mask = expert_mask.to(moe_output.device)
                 # Get weights for this expert [M] where M=sum(expert_mask)
                 weights = topk_weights[expert_mask, (topk_indices[expert_mask] == expert_idx).nonzero()[:, 1]]
+                weights = weights.to(moe_output.device)
                 # Compute expert output only for relevant samples
                 expert_out = expert(all_feats[expert_mask]) # [M, num_classes]
+                expert_out = expert_out.to(moe_output.device)
                 # Weighted contribution
                 moe_output[expert_mask] += weights.unsqueeze(-1) * expert_out
 
         return moe_output
 
-    def _update_stats(self, loss, logits, labels):
-        probabilities = torch.nn.functional.softmax(logits, dim=1)
-        _, predicted_labels = torch.max(probabilities, dim=1)
-        correct_predictions = (predicted_labels == labels).sum().item()
-
-        self.total_correct_predictions += correct_predictions
-        self.total_predictions += labels.size(0)
+    def _update_stats(self, loss):
         self.total_loss.append(loss.item())
 
     def _calculate_stats(self):
-        return sum(self.total_loss) / len(self.total_loss), self.total_correct_predictions / self.total_predictions
+        return sum(self.total_loss) / len(self.total_loss)
 
     def train_step(self, batch):
-        """This method has been created based on the logic found in the file
-        `.../AppleCider/core/trainer.py`.
-        Based on that file, the optimizer and criterion functions appear to be
-        configurable, but it's not clear which one are actually used.
-        """
+        _, _, labels = batch
 
-        # This is a placeholder until I implement the to_tensor method.
-        print(batch)
-        metadata, images, labels = batch
+        self.this_optimizer.zero_grad()
 
-        self.optimizer.zero_grad()
+        logits = self.forward(batch)
 
-        logits = self.forward(metadata, images)
+        loss = self.this_criterion(logits, labels)
 
-        loss = self.criterion(logits, labels)
-
-        self._update_stats(loss, logits, labels)
+        self._update_stats(loss)
 
         loss.backward()
 
-        self.optimizer.step()
+        self.this_optimizer.step()
 
         # in trainer.py this is calculated per epoch, here we calculate it per batch
-        loss, acc = self._calculate_stats()
+        loss = self._calculate_stats()
 
-        return {'loss': loss, 'acc': acc}
+        return {'loss': loss}
 
 
     @staticmethod
     def to_tensor(data_dict):
-        """Place holder for use with Hyrax. This method will receive a dictionary
-        of data and should convert it to the relevant tensors needed for either
-        training or inference."""
         data = data_dict['data']
 
-        columns = [chr(i) for i in range(ord('a'), ord('z')+1)]
-
-        # horizontally concatenate metadata columns
-        metadata = torch.tensor(np.hstack([data[c] for c in columns]))
-        images = torch.tensor(data['image']).float()
-        labels = torch.tensor(data['label']).long()
+        metadata = torch.as_tensor(data['metadata'], dtype=torch.float32)
+        images = torch.as_tensor(data['image'], dtype=torch.float32)
+        labels = torch.as_tensor(data['target'], dtype=torch.long)
         return (metadata, images, labels)

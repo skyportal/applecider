@@ -3,10 +3,6 @@ name = "AppleCider.models.hyrax_models.astrominn.AstroMiNN"
 
 [model_inputs]
 [model_inputs.data]
-dataset_class = "HyraxRandomDataset"
-primary_id_field = "object_id"
-[model_inputs.data.dataset_config]
-size = 1000
-shape = [4, 64, 64]
-provided_labels = [0, 1, 2, 3, 4]
-metadata_fields = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+dataset_class = "AppleCider.datasets.hyrax_datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
+data_location = "../../data/preprocessed_ztf_alerts"
+primary_id_field = "obj_id"
