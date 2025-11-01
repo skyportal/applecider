@@ -114,7 +114,7 @@ class ImageAndMetadataDataset(HyraxDataset):
             The one hot real target vector for the specified index.
         """
         original_class = self.raw_files[index].get('target')
-        real_target = np.zeros(9)
+        real_target = np.zeros(len(REAL_CLASSES))
 
         for idy, category in enumerate(REAL_CLASSES):
             if original_class == category:
