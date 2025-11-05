@@ -1,5 +1,5 @@
 [model.AstroMiNN]
-num_classes = 5
+num_classes = 9
 num_mlp_experts = 4
 
 towers_hidden_dims = 16
@@ -8,6 +8,48 @@ towers_outdims = 32
 fusion_hidden_dims = 128
 fusion_router_dims = 128
 fusion_outdims = 32
+
+# number of potential classes if redshift is false
+class_order = 9
+
+flat_dim = 3072
+cnn_lr = 2
+cnn_decay = 5e-2
+psf_lr = 0.5
+psf_decay = 5e-2
+mag_lr =  2
+mag_decay =  0.0
+
+lc_lr =  2
+lc_decay =  0.05
+spatial_lr = 2
+spatial_decay = 0.0
+
+coord_lr =  0.5
+coord_decay =  0.0
+
+nst1_lr = 2
+nst1_decay = 0.0
+nst2_lr = 2
+nst2_decay = 0.0
+
+fusion_lr = 1
+fusion_decay = 1e-2
+fusion_beta1 =  0.9
+fusion_beta2 =  0.999
+
+router_decay = 0.0
+router_lr = 1.5
+router_beta1 = 0.9
+router_beta2 = 0.999
+router_lr_2 = 1
+router_beta1_2 = 0.95
+router_beta2_2 = 0.99
+
+beta1 = 0.9
+beta2 = 0.999
+eps = 5e-10
+
 
 [model.SpectraNet]
 # whether the model will provide a redshift estimate (true)
@@ -29,7 +71,63 @@ kernel_sizes_per_stage = [
     [3, 7, 13]
 ]
 
-# number of potential classes if redshift is false
-class_order = 9
+[data_set.ImageAndMetadataDataset]
+# Defines the maximum number of alerts per sample to work with. Use <= 0 for all available alerts.
+alert = 0
 
-flat_dim = 3072
+all_samples = false
+
+augment = true
+
+classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN', 'Tidal Disruption Event']
+
+cutout_size = 63
+
+# If enabled, images will be cached in memory after first load to speed up subsequent epochs
+# This may lead to high memory usage depending, and out of memory errors on large datasets
+enable_image_cache = false
+
+image_norm = false  #? What should the default be here?
+
+patch_size = [32, 32]  #? Is it possible to consolidate this with cutout_size?
+
+tags = []
+
+
+[model.BaselineCLS]
+num_classes = 5 # TODO: Find actual number
+pad_mask = 1 # TODO: Find actual number
+mode = "photo"
+
+# Pulled from abrown3/AppleCiDEr_Skyportal/modes/photo/photo_t2vec_transformer_classifier.ipynb
+# Some may be unneccesary for hyrax and others may belong in the dataset class
+# data --------------------------------------------------------
+output_dir = '/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events'
+stats_file = 'feature_stats_day100.npz'
+horizon_days = 50.0 # <- fine-tuning on 50 days
+batch_size = 3 #64
+sampler_balance = true
+num_workers = 8
+# model -------------------------------------------------------
+d_model = 128
+n_heads = 8 #4
+n_layers = 4 #2
+dropout = 0.30
+max_len = 257 #300 #256 #128 #128
+# optimiser ---------------------------------------------------
+lr = 5e-6 # there are other values for these
+weight_decay = 1e-2
+
+# loss & imbalance -------------------------------------------
+focal_gamma = 2.0
+
+# augmentation -------horizon_days----------------------------------------
+cut_time_p = false #(.25,.25,.25,.25), #None,  # or (.25,.25,.25,.25)
+p_dropout = 0.1
+jitter_scale = 0.10
+flux_nu = 8
+# training schedule ------------------------------------------
+epochs = 150
+patience = 30
+# misc --------------------------------------------------------
+seed = 42
