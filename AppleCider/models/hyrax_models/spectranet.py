@@ -135,8 +135,8 @@ class SpectraNet(nn.Module):
             do_pool = False if i == len(depths) - 1 else True
 
             stage, k = make_stage(
-                in_c=in_channel,
-                out_c=out_channel,
+                in_channel=in_channel,
+                out_channel=out_channel,
                 depth=depth,
                 kernel_sizes=kernel_size,
                 use_ln=use_ln_stage,
@@ -166,7 +166,12 @@ class SpectraNet(nn.Module):
                 nn.Linear(384, class_order),
             )
 
-    def forward(self, x):
+    def forward(self, batch):
+        if isinstance(batch, tuple):
+            x, _, _ = batch
+        else:
+            x = batch
+
         x = self.all_stages(x)
 
         x_max = F.adaptive_max_pool1d(x, 1).squeeze(-1)  # [B, C]
@@ -180,10 +185,10 @@ class SpectraNet(nn.Module):
 
     def train_step(self, batch):
         # spectranet uses the `train_one_epoch` function in utils.py
-        inputs, labels, redshifts = batch
+        _, labels, redshifts = batch
 
         self.optimizer.zero_grad()
-        outputs = self(inputs)
+        outputs = self(batch)
         if self.redshift:
             loss = self.criterion(outputs, redshifts)
         else:

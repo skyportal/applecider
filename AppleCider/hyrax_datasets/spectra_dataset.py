@@ -10,7 +10,7 @@ class SpectraData(HyraxDataset, Dataset):
     def __init__(self, config, data_location=None):
         super().__init__(config)
 
-        data_table = torch.load(config["model_inputs"]["data"]["file_path"])
+        data_table = torch.load(data_location)
 
         # Used for casting the classification labels into an
         # integer that can be used as part of the criterion
