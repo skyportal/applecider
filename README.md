@@ -1,5 +1,5 @@
 <p align="center">
-<img align="center" src="https://github.com/skyportal/applecider/blob/main/logo/AppleCiDEr%20-%20use%20over%20black.png" alt="Draft AppleCiDEr Logo" height="350px">
+<img align="center" src="https://github.com/skyportal/applecider/blob/main/docs/static/AppleCiDEr_use_over_black.png" alt="Draft AppleCiDEr Logo" height="350px">
 </p>
 
 
@@ -13,7 +13,7 @@
 
 <br><br>
 ### `AppleCiDEr` in ZTF production
-<img align="center" src="https://github.com/skyportal/applecider/blob/main/img/ZTF_Production%20-%20use%20over%20black.png" alt="ZTF production diagram" height="550px">
+<img align="center" src="https://github.com/skyportal/applecider/blob/main/docs/static/ZTF_Production_use_over_black.png" alt="ZTF production diagram" height="550px">
 
 
 <br><br>

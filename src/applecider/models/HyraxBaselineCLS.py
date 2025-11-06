@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..BaselineCLS import Time2Vec
+from applecider.models.Time2Vec import Time2Vec
 
 
 @hyrax_model

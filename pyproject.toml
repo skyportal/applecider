@@ -1,10 +1,12 @@
+
 [project]
 name = "applecider"
-license = {file = "LICENSE"}
 readme = "README.md"
+authors = [
+    { name = "Alexandra Junell", email = "ajunell@umn.edu" }
+]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
@@ -13,19 +15,6 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.9"
 dependencies = [
-]
-
-# To install optional dependencies (doug, max, drew, or dev), use: pip install '.[doug]' (or '.[max]', '.[drew]', '.[dev]') -- this works on all platforms; use single quotes in Unix shells.
-[project.optional-dependencies]
-doug = [
-]
-
-max = [
-    "hyrax",
-    "numpy"
-]
-
-drew = [
     "hyrax",
     "matplotlib",
     "numpy",
@@ -36,7 +25,17 @@ drew = [
     "tqdm"
 ]
 
+[project.urls]
+"Source Code" = "https://github.com/skyportal/applecider"
+
+# On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
+[project.optional-dependencies]
 dev = [
+    "jupyter", # Clears output from Jupyter notebooks
+    "pre-commit", # Used to run checks before finalizing a git commit
+    "pytest",
+    "pytest-cov", # Used to report total code coverage
+    "ruff", # Used for static linting of files
 ]
 
 [build-system]
@@ -46,11 +45,61 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["AppleCider*"]  # List your package patterns here
-exclude = ["files*", "img*", "logo*", "notebook*", "tests*", "docs*"]                # Optionally exclude patterns
-
 [tool.setuptools_scm]
-write_to = "AppleCider/_version.py"
+write_to = "src/applecider/_version.py"
 
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+    "src",
+    "docs",
+]
+addopts = "--doctest-modules --doctest-glob=*.rst"
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    "W",
+    # Pyflakes
+    "F",
+    # pep8-naming
+    "N",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # docstrings
+    "D101",
+    "D102",
+    "D103",
+    "D106",
+    "D206",
+    "D207",
+    "D208",
+    "D300",
+    "D417",
+    "D419",
+    # Numpy v2.0 compatibility
+    "NPY201",
+]
+ignore = [
+    "UP006", # Allow non standard library generics in type hints
+    "UP007", # Allow Union in type hints
+    "SIM114", # Allow if with same arms
+    "B028", # Allow default warning level
+    "SIM117", # Allow nested with
+    "UP015", # Allow redundant open parameters
+    "UP028", # Allow yield in for loop
+]
+
+
+[tool.coverage.run]
+omit=["src/applecider/_version.py"]
