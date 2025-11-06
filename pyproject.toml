@@ -21,6 +21,8 @@ doug = [
 ]
 
 max = [
+    "hyrax",
+    "numpy"
 ]
 
 drew = [
