@@ -15,6 +15,14 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.9"
 dependencies = [
+    "hyrax",
+    "matplotlib",
+    "numpy",
+    "scikit-learn",
+    "timm",
+    "torch",
+    "torchvision",
+    "tqdm"
 ]
 
 [project.urls]
@@ -28,25 +36,6 @@ dev = [
     "pytest",
     "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
-]
-
-doug = [
-]
-
-max = [
-    "hyrax",
-    "numpy"
-]
-
-drew = [
-    "hyrax",
-    "matplotlib",
-    "numpy",
-    "scikit-learn",
-    "timm",
-    "torch",
-    "torchvision",
-    "tqdm"
 ]
 
 [build-system]
