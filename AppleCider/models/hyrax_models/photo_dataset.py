@@ -36,7 +36,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         # getting happens via the getter methods below
         pass
     
-    def get_id(self,idx):
+    def get_object_id(self, idx):
         """get unique identifier for a specific index"""
         # Find the row in the manifest
         return self.manifest_df.iloc[idx]["obj_id"]
@@ -100,10 +100,13 @@ def collate(batch):
             [torch.zeros(len(batch), 1, device=mask.device, dtype=torch.bool),
              mask], dim=1
         )
+
+    object_ids = [b["object_id"] for b in batch]
     return {"data": {"photometry": pad,
                      "label": torch.tensor(labels),
                      "pad_mask": pad_mask,
                      "mean": torch.tensor(batch[0]["data"]["mean"]),
                      "std": torch.tensor(batch[0]["data"]["std"]),
-                     }
+                     },
+            "object_id": object_ids,
             }
