@@ -1,9 +1,9 @@
 [model]
-name = "AppleCider.models.hyrax_models.HyraxBaselineCLS.HyraxBaselineCLS"
+name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
 
 [data_loader]
 batch_size = 5
-collate_fn = "AppleCider.models.hyrax_models.photo_dataset.collate"
+collate_fn = "applecider.datasets.photo_dataset.collate"
 
 [data_set.PhotoEventsDataset]
 manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
@@ -11,15 +11,15 @@ stats_path = "/Users/dbranton/lincc/incubators/photo_events/feature_stats_day100
 
 [model_inputs]
 [model_inputs.train.data]
-dataset_class = "AppleCider.models.hyrax_models.photo_dataset.PhotoEventsDataset"
+dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
 data_location = "/Users/dbranton/lincc/incubators/photo_events/train/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
 
 [model_inputs.infer.data]
-dataset_class = "AppleCider.models.hyrax_models.photo_dataset.PhotoEventsDataset"
+dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
 data_location = "/Users/dbranton/lincc/incubators/photo_events/test/"
-#data_location = "/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/test/"
+#data_location = "/work/hdd/bcrv/ffontinelenunes/data/applecider/photo_events/test/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
 
