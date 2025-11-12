@@ -10,11 +10,18 @@ manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.cs
 stats_path = "/Users/dbranton/lincc/incubators/photo_events/feature_stats_day100.npz"
 
 [model_inputs]
-[model_inputs.data]
+[model_inputs.train.data]
 dataset_class = "AppleCider.models.hyrax_models.photo_dataset.PhotoEventsDataset"
 data_location = "/Users/dbranton/lincc/incubators/photo_events/train/"
 fields = ["photometry", "label", "mean", "std"]
-primary_id_field = "id"
+primary_id_field = "object_id"
+
+[model_inputs.infer.data]
+dataset_class = "AppleCider.models.hyrax_models.photo_dataset.PhotoEventsDataset"
+data_location = "/Users/dbranton/lincc/incubators/photo_events/test/"
+#data_location = "/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/test/"
+fields = ["photometry", "label", "mean", "std"]
+primary_id_field = "object_id"
 
 [train]
 #The number of epochs to train for.
