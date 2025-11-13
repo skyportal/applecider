@@ -9,10 +9,6 @@ fusion_hidden_dims = 128
 fusion_router_dims = 128
 fusion_outdims = 32
 
-# number of potential classes if redshift is false
-class_order = 9
-
-flat_dim = 3072
 cnn_lr = 2
 cnn_decay = 5e-2
 psf_lr = 0.5
@@ -109,6 +105,10 @@ kernel_sizes_per_stage = [
     [3, 11, 31],
     [3, 7, 13]
 ]
+# number of potential classes if redshift is false
+class_order = 9
+
+flat_dim = 3072
 
 
 [data_set.ImageAndMetadataDataset]
