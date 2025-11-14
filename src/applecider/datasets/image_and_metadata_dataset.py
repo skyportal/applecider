@@ -31,6 +31,8 @@ class ImageAndMetadataDataset(HyraxDataset):
         self.raw_files = [np.load(os.path.join(data_location, file_name), allow_pickle=True).item()
                 for file_name in file_names]
 
+        self.obj_ids = [file.get('obj_id') for file in self.raw_files]
+
         self.enable_cache = self.dataset_config['enable_image_cache']
         self.image_cache = {}
 
@@ -125,7 +127,13 @@ class ImageAndMetadataDataset(HyraxDataset):
 
     def get_obj_id(self, index):
         # Method to retrieve object ID at the specified index
-        return self.raw_files[index].get('obj_id')
+        return self.obj_ids[index]
+
+
+    def ids(self):
+        # Generator to yield all object IDs in the dataset
+        for idx in range(len(self.raw_files)):
+            yield self.obj_ids[idx]
 
 
     def __len__(self):

@@ -2,6 +2,7 @@ import numpy as np
 import timm
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from hyrax.models import hyrax_model
 
@@ -262,6 +263,9 @@ class AstroMiNN(nn.Module):
                 # Weighted contribution
                 moe_output[expert_mask] += weights.unsqueeze(-1) * expert_out
 
+        if self.config['model']['AstroMiNN']['use_probabilities']:
+            moe_output = F.softmax(moe_output, dim=-1)
+
         return moe_output
 
     def _update_stats(self, loss):
@@ -297,5 +301,5 @@ class AstroMiNN(nn.Module):
 
         metadata = torch.as_tensor(data['metadata'], dtype=torch.float32)
         images = torch.as_tensor(data['image'], dtype=torch.float32)
-        labels = torch.as_tensor(data['target'], dtype=torch.long)
+        labels = torch.as_tensor(data['target'], dtype=torch.float32)
         return (metadata, images, labels)

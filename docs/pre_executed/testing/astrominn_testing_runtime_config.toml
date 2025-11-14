@@ -1,8 +1,13 @@
 [model]
-name = "AppleCider.models.hyrax_models.astrominn.AstroMiNN"
+name = "applecider.models.astrominn.AstroMiNN"
 
 [model_inputs]
-[model_inputs.data]
-dataset_class = "AppleCider.datasets.hyrax_datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
-data_location = "../../data/preprocessed_ztf_alerts"
+[model_inputs.train.data]
+dataset_class = "applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
+data_location = "../../../data/preprocessed_ztf_alerts"
+primary_id_field = "obj_id"
+
+[model_inputs.infer.data]
+dataset_class = "applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
+data_location = "../../../data/preprocessed_ztf_alerts"
 primary_id_field = "obj_id"
