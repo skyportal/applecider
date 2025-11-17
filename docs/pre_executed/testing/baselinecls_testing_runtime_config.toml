@@ -1,6 +1,9 @@
 [model]
 name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
 
+[model.HyraxBaselineCLS]
+use_probabilities = false
+
 [data_loader]
 batch_size = 5
 collate_fn = "applecider.datasets.photo_dataset.collate"
@@ -9,12 +12,29 @@ collate_fn = "applecider.datasets.photo_dataset.collate"
 manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
 stats_path = "/Users/dbranton/lincc/incubators/photo_events/feature_stats_day100.npz"
 
+# Needed for manifest path -- hyrax will fix
+[data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
+manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
+
 [model_inputs]
 [model_inputs.train.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
 data_location = "/Users/dbranton/lincc/incubators/photo_events/train/"
+
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
+[model_inputs.train.data.dataset_config]
+manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
+
+[model_inputs.validate.data]
+dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
+data_location = "/Users/dbranton/lincc/incubators/photo_events/val/"
+#data_location = "/work/hdd/bcrv/ffontinelenunes/data/applecider/photo_events/val/"
+fields = ["photometry", "label", "mean", "std"]
+primary_id_field = "object_id"
+
+[model_inputs.validate.data.dataset_config]
+manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_val.csv"
 
 [model_inputs.infer.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
@@ -22,10 +42,12 @@ data_location = "/Users/dbranton/lincc/incubators/photo_events/test/"
 #data_location = "/work/hdd/bcrv/ffontinelenunes/data/applecider/photo_events/test/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
+[model_inputs.infer.data.dataset_config]
+manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_test.csv"
 
 [train]
 #The number of epochs to train for.
-epochs = 2
+epochs = 21
 
 [optimizer]
 name = "torch.optim.Adam"
