@@ -12,7 +12,9 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
     def __init__(self, config: dict, data_location: Union[Path, str] = None, horizon: float = 10.0):
         self.data_location = data_location
         self.filenames = sorted(list(Path(self.data_location).glob('*.npz')))
-        self.manifest_df = pd.read_csv(config["data_set"]["PhotoEventsDataset"]["manifest_path"])
+        #self.manifest_df = pd.read_csv(config["data_set"]["PhotoEventsDataset"]["manifest_path"])
+        self.manifest_df = pd.read_csv(config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]["manifest_path"])
+        self.object_ids = self.manifest_df["obj_id"].tolist()
         self.horizon = horizon
         self.st = np.load(Path(config["data_set"]["PhotoEventsDataset"]["stats_path"]))
 
@@ -38,9 +40,12 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
     
     def get_object_id(self, idx):
         """get unique identifier for a specific index"""
-        # Find the row in the manifest
-        return self.manifest_df.iloc[idx]["obj_id"]
+        # Find the row in the manifest ids
+        return self.object_ids[idx]
 
+    def ids(self):
+        for idx in range(len(self)):
+            yield self.object_ids[idx]
 
     def get_label(self, idx):
         """get ID label for a specific index"""
@@ -94,7 +99,6 @@ def collate(batch):
     lens = [s.size(0) for s in seqs]
     pad  = pad_sequence(seqs, batch_first=True)              # (B, L, 7)
     mask = torch.stack([torch.cat([torch.zeros(l), torch.ones(pad.size(1)-l)]) for l in lens]).bool()
-
     # adjust padding mask to account for CLS at idx=0
     pad_mask = torch.cat(
             [torch.zeros(len(batch), 1, device=mask.device, dtype=torch.bool),

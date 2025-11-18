@@ -55,6 +55,7 @@ class HyraxBaselineCLS(nn.Module):
         t = data[..., 0]
 
         # compute the learned time embedding:
+        # should be training time2vec, we should double check
         te = self.time2vec(t)
 
         # add it:
@@ -64,6 +65,7 @@ class HyraxBaselineCLS(nn.Module):
         hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
 
         # encode
+        # In inference this is a convergence point
         z = self.encoder(hte, src_key_padding_mask=pad)  # (B, L+1, d_model)
 
         output = self.norm(z[:, 0])  # (B, d_model )
@@ -72,6 +74,8 @@ class HyraxBaselineCLS(nn.Module):
             # classification from the CLS token
             output = self.fc(output)  # (B, num_classes)
 
+        if self.config["model"]["HyraxBaselineCLS"]["use_probabilities"]:
+            output = F.softmax(output, dim=1)
         return output
 
     def train_step(self, batch):
@@ -97,8 +101,8 @@ class HyraxBaselineCLS(nn.Module):
         loss = self.criterion(decoded, labels)
         loss.backward()
         self.optimizer.step()
-
-        return {"loss": loss.item()}
+        numpy_logits = decoded.detach().cpu().numpy()
+        return {"loss": loss.item(), "value": numpy_logits[0][0]} #"batch_confusion": numpy_logits[0][0] - numpy_logits[1][0]}
 
     @staticmethod
     def to_tensor(data_dict):
