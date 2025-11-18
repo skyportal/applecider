@@ -123,6 +123,8 @@ augment = true
 
 classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN', 'Tidal Disruption Event']
 
+class_distribution = [1, 1, 1, 1, 1]
+
 cutout_size = 63
 
 # If enabled, images will be cached in memory after first load to speed up subsequent epochs

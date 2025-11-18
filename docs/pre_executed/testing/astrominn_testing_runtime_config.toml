@@ -1,6 +1,12 @@
 [model]
 name = "applecider.models.astrominn.AstroMiNN"
 
+[data_set]
+train_size = 1.0
+validate_size = 0.0
+test_size = 0.0
+
+
 [model_inputs]
 [model_inputs.train.data]
 dataset_class = "applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
