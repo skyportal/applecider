@@ -5,7 +5,7 @@ import torch
 
 from hyrax.data_sets.data_set_registry import HyraxDataset
 
-from applecider.datasets.oversampler import Oversampler
+from applecider.datasets.oversampler_mixin import OversamplerMixin
 
 EPS = 1e-8  # Small value to prevent division by zero
 REAL_CLASSES = [
@@ -28,7 +28,7 @@ CLASSES = [
     ['Tidal Disruption Event']
 ]
 
-class ImageAndMetadataDataset(HyraxDataset, Oversampler):
+class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
     def __init__(self, config, data_location):
 
         self.dataset_config = config['data_set']['ImageAndMetadataDataset']
@@ -58,22 +58,19 @@ class ImageAndMetadataDataset(HyraxDataset, Oversampler):
                     self.class_counts[idy] += 1
                     continue
 
-        # Produce the counts of each class in the dataset.
-        self._calculate_over_sampling_counts(self.dataset_config["class_distribution"])
+        # Prepare oversampling mixin with class distribution and class at index
+        self.prepare_over_sampling(
+            self.dataset_config["class_distribution"],
+            self.class_at_index
+        )
         self.original_count = len(self.raw_files)
 
         super().__init__(config)
         # Additional initialization for image and metadata dataset can be added here
 
-    def _get_class_counts(self):
-        return self.class_counts
-
-    def _get_class_at_index(self):
-        return self.class_at_index
-
     def get_metadata(self, index):
         # Method to retrieve metadata at the specified index
-        index, is_oversampled = self.retrieve_index(index)
+        index, is_oversampled = self.retrieve_oversampled_index(index)
         return self.raw_files[index].get('metadata')
 
     def get_image(self, index):
@@ -81,8 +78,8 @@ class ImageAndMetadataDataset(HyraxDataset, Oversampler):
         if self.enable_cache and index in self.image_cache:
             image = self.image_cache[index]
         else:
-            index, is_oversampled = self.retrieve_index(index)
-            image = self.raw_files[index].get('image')
+            oversampled_index, is_oversampled = self.retrieve_oversampled_index(index)
+            image = self.raw_files[oversampled_index].get('image')
 
             if "vit_tower" in self.dataset_config["tags"]:
                 i1 = int((63-self.dataset_config["patch_size"][0])/2)
@@ -126,7 +123,7 @@ class ImageAndMetadataDataset(HyraxDataset, Oversampler):
         np.ndarray
             The one hot target vector for the specified index.
         """
-        index_found, is_oversampled = self.retrieve_index(index)
+        index_found, is_oversampled = self.retrieve_oversampled_index(index)
         original_class = self.raw_files[index_found].get('target')
         target = np.zeros(len(CLASSES))
 
@@ -150,7 +147,7 @@ class ImageAndMetadataDataset(HyraxDataset, Oversampler):
         np.ndarray
             The one hot real target vector for the specified index.
         """
-        index_found, is_oversampled = self.retrieve_index(index)
+        index_found, is_oversampled = self.retrieve_oversampled_index(index)
         original_class = self.raw_files[index_found].get('target')
         real_target = np.zeros(len(REAL_CLASSES))
 
@@ -163,7 +160,7 @@ class ImageAndMetadataDataset(HyraxDataset, Oversampler):
 
     def get_obj_id(self, index):
         # Method to retrieve object ID at the specified index
-        index_found, is_oversampled = self.retrieve_index(index)
+        index_found, is_oversampled = self.retrieve_oversampled_index(index)
         return self.raw_files[index_found].get('obj_id')
 
 
