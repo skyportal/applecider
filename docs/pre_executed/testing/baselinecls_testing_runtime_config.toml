@@ -5,12 +5,13 @@ name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
 use_probabilities = false
 
 [data_loader]
-batch_size = 5
+batch_size = 128
 collate_fn = "applecider.datasets.photo_dataset.collate"
 
 [data_set.PhotoEventsDataset]
 manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
 stats_path = "/Users/dbranton/lincc/incubators/photo_events/feature_stats_day100.npz"
+horizon = 100.0 # days
 
 # Needed for manifest path -- hyrax will fix
 [data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
@@ -47,7 +48,8 @@ manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_test.csv
 
 [train]
 #The number of epochs to train for.
-epochs = 21
+epochs = 100
 
 [optimizer]
 name = "torch.optim.Adam"
+lr = 0.0001

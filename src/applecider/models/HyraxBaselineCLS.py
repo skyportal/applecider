@@ -15,12 +15,12 @@ class HyraxBaselineCLS(nn.Module):
         super().__init__()
 
         self.config = config
-        self._criterion = FocalLoss
+        self.criterion = FocalLoss()
 
         model_config = config["model"]["BaselineCLS"]
         #self.optimizer = torch.optim.AdamW(self.parameters(), lr=model_config["lr"], weight_decay=model_config["weight_decay"])
         # Use AdamW eventually
-        #self.optimizer = torch.optim.Adam()
+
 
         self.in_proj = nn.Linear(7, model_config['d_model'])
         self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config['d_model']))
@@ -37,6 +37,8 @@ class HyraxBaselineCLS(nn.Module):
         self.classification = True if model_config['mode'] == 'photo' else False
         if self.classification:
             self.fc = nn.Linear(model_config['d_model'], model_config['num_classes'])
+
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
 
     def forward(self, x, pad=None):
         """
@@ -73,7 +75,6 @@ class HyraxBaselineCLS(nn.Module):
         if self.classification:
             # classification from the CLS token
             output = self.fc(output)  # (B, num_classes)
-
         if self.config["model"]["HyraxBaselineCLS"]["use_probabilities"]:
             output = F.softmax(output, dim=1)
         return output
@@ -100,9 +101,19 @@ class HyraxBaselineCLS(nn.Module):
         decoded = self.forward(batch)
         loss = self.criterion(decoded, labels)
         loss.backward()
+
+        #gradient clipping
+        # TODO: make this a config option, potentially a general
+        torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+
         self.optimizer.step()
         numpy_logits = decoded.detach().cpu().numpy()
-        return {"loss": loss.item(), "value": numpy_logits[0][0]} #"batch_confusion": numpy_logits[0][0] - numpy_logits[1][0]}
+
+
+        # Additional metrics
+        # We wanted epoch-level metrics to assess, but hyrax potentially only allows batch-level metrics here (ask Drew)
+        # accuracy, total loss/tot n, any custom metrics
+        return {"loss": loss.item(), "value": numpy_logits[0][1], } #"batch_confusion": numpy_logits[0][0] - numpy_logits[1][0]}
 
     @staticmethod
     def to_tensor(data_dict):
