@@ -15,12 +15,12 @@ class HyraxBaselineCLS(nn.Module):
         super().__init__()
 
         self.config = config
-        #self.criterion = FocalLoss()
+        self.criterion = FocalLoss()
 
         model_config = config["model"]["BaselineCLS"]
         #self.optimizer = torch.optim.AdamW(self.parameters(), lr=model_config["lr"], weight_decay=model_config["weight_decay"])
         # Use AdamW eventually
-       
+
 
         self.in_proj = nn.Linear(7, model_config['d_model'])
         self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config['d_model']))
@@ -38,7 +38,7 @@ class HyraxBaselineCLS(nn.Module):
         if self.classification:
             self.fc = nn.Linear(model_config['d_model'], model_config['num_classes'])
 
-        #self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)#lr=10e-4)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
 
     def forward(self, x, pad=None):
         """
@@ -94,7 +94,6 @@ class HyraxBaselineCLS(nn.Module):
         Current loss value : dict
             Dictionary containing the loss value for the current batch.
         """
-        #import pdb;pdb.set_trace()
 
         labels = batch[1]
         self.optimizer.zero_grad()

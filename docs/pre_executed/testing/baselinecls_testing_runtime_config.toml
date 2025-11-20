@@ -53,6 +53,3 @@ epochs = 100
 [optimizer]
 name = "torch.optim.Adam"
 lr = 0.0001
-
-["torch.optim.Adam"]
-lr = 0.0001
