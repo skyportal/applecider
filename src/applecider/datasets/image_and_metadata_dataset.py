@@ -1,8 +1,11 @@
+from operator import index
 import os
 import numpy as np
 import torch
 
 from hyrax.data_sets.data_set_registry import HyraxDataset
+
+from applecider.datasets.oversampler_mixin import OversamplerMixin
 
 EPS = 1e-8  # Small value to prevent division by zero
 REAL_CLASSES = [
@@ -17,28 +20,57 @@ REAL_CLASSES = [
     "Cataclysmic"
 ]
 
-class ImageAndMetadataDataset(HyraxDataset):
+CLASSES = [
+    ['SN Ia','SN Ic','SN Ib'],
+    ['SN IIP', 'SN IIn','SN II', 'SN IIb'],
+    ['Cataclysmic'],
+    ['AGN'],
+    ['Tidal Disruption Event']
+]
+
+class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
     def __init__(self, config, data_location):
 
         self.dataset_config = config['data_set']['ImageAndMetadataDataset']
 
         self.all_samples = self.dataset_config['all_samples']
         self.augment = self.dataset_config['augment']
-        self.classes = self.dataset_config['classes']
 
         file_names = sorted([f for f in os.listdir(data_location) if f.endswith('.npy')])
 
         self.raw_files = [np.load(os.path.join(data_location, file_name), allow_pickle=True).item()
                 for file_name in file_names]
 
+        self.obj_ids = [file.get('obj_id') for file in self.raw_files]
+
         self.enable_cache = self.dataset_config['enable_image_cache']
         self.image_cache = {}
+
+        # Look through each data sample, and get it's class index.
+        self.class_at_index = np.zeros(len(self.raw_files))
+        self.class_counts = np.zeros(len(CLASSES), dtype=np.int64)
+        for file_indx, file in enumerate(self.raw_files):
+            original_class = file.get('target')
+
+            for idy, category in enumerate(CLASSES):
+                if original_class in category:
+                    self.class_at_index[file_indx] = idy
+                    self.class_counts[idy] += 1
+                    continue
+
+        # Prepare oversampling mixin with class distribution and class at index
+        self.prepare_over_sampling(
+            self.dataset_config["class_distribution"],
+            self.class_at_index
+        )
+        self.original_count = len(self.raw_files)
 
         super().__init__(config)
         # Additional initialization for image and metadata dataset can be added here
 
     def get_metadata(self, index):
         # Method to retrieve metadata at the specified index
+        index, is_oversampled = self.retrieve_oversampled_index(index)
         return self.raw_files[index].get('metadata')
 
     def get_image(self, index):
@@ -46,7 +78,8 @@ class ImageAndMetadataDataset(HyraxDataset):
         if self.enable_cache and index in self.image_cache:
             image = self.image_cache[index]
         else:
-            image = self.raw_files[index].get('image')
+            oversampled_index, is_oversampled = self.retrieve_oversampled_index(index)
+            image = self.raw_files[oversampled_index].get('image')
 
             if "vit_tower" in self.dataset_config["tags"]:
                 i1 = int((63-self.dataset_config["patch_size"][0])/2)
@@ -90,10 +123,11 @@ class ImageAndMetadataDataset(HyraxDataset):
         np.ndarray
             The one hot target vector for the specified index.
         """
-        original_class = self.raw_files[index].get('target')
-        target = np.zeros(len(self.classes))
+        index_found, is_oversampled = self.retrieve_oversampled_index(index)
+        original_class = self.raw_files[index_found].get('target')
+        target = np.zeros(len(CLASSES))
 
-        for idy, category in enumerate(self.classes):
+        for idy, category in enumerate(CLASSES):
             if original_class in category:
                 target[idy] = 1.0
 
@@ -113,7 +147,8 @@ class ImageAndMetadataDataset(HyraxDataset):
         np.ndarray
             The one hot real target vector for the specified index.
         """
-        original_class = self.raw_files[index].get('target')
+        index_found, is_oversampled = self.retrieve_oversampled_index(index)
+        original_class = self.raw_files[index_found].get('target')
         real_target = np.zeros(len(REAL_CLASSES))
 
         for idy, category in enumerate(REAL_CLASSES):
@@ -125,12 +160,18 @@ class ImageAndMetadataDataset(HyraxDataset):
 
     def get_obj_id(self, index):
         # Method to retrieve object ID at the specified index
-        return self.raw_files[index].get('obj_id')
+        index_found, is_oversampled = self.retrieve_oversampled_index(index)
+        return self.raw_files[index_found].get('obj_id')
 
+
+    def ids(self):
+        # Generator to yield all object IDs in the dataset
+        for idx in range(len(self)):
+            yield self.get_obj_id(idx)
 
     def __len__(self):
         # Return the total number of items in the dataset
-        return len(self.raw_files)
+        return self.total_count_with_oversampling
 
 
     def __getitem__(self, index):

@@ -2,6 +2,8 @@
 num_classes = 9
 num_mlp_experts = 4
 
+use_probabilities = false
+
 towers_hidden_dims = 16
 towers_outdims = 32
 
@@ -120,6 +122,8 @@ all_samples = false
 augment = true
 
 classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN', 'Tidal Disruption Event']
+
+class_distribution = [1, 1, 1, 1, 1]
 
 cutout_size = 63
 
