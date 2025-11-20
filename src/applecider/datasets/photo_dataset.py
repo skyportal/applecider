@@ -15,7 +15,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         #self.manifest_df = pd.read_csv(config["data_set"]["PhotoEventsDataset"]["manifest_path"])
         self.manifest_df = pd.read_csv(config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]["manifest_path"])
         self.object_ids = self.manifest_df["obj_id"].tolist()
-        self.horizon = horizon
+        self.horizon = config["data_set"]["PhotoEventsDataset"]["horizon"]
         self.st = np.load(Path(config["data_set"]["PhotoEventsDataset"]["stats_path"]))
 
         # Map original subclass IDs to broader classes
@@ -60,6 +60,17 @@ class PhotoEventsDataset(HyraxDataset, Dataset):
         data = np.load(self.filenames[idx], allow_pickle=True)["data"]
         # TODO: Consider caching data to avoid duplicate loads in each epoch
 
+        # Limit length to <100 for memory constraints
+        #data = data[:100]
+
+        # TODO: oversampling
+
+        # TODO: data augmentation
+
+        # Horizon cut: only keep data up to a certain (relative) time
+        data = data[data[:,0] <= self.horizon]
+
+
         # Grab features from array slices
         dt = data[:, 0]
         dt_prev = data[:, 1]
@@ -97,7 +108,7 @@ def collate(batch):
         labels += [i["data"]["label"]]
 
     lens = [s.size(0) for s in seqs]
-    pad  = pad_sequence(seqs, batch_first=True)              # (B, L, 7)
+    pad  = pad_sequence(seqs, batch_first=True)            # (B, L, 7)
     mask = torch.stack([torch.cat([torch.zeros(l), torch.ones(pad.size(1)-l)]) for l in lens]).bool()
     # adjust padding mask to account for CLS at idx=0
     pad_mask = torch.cat(
