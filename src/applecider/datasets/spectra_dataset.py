@@ -47,6 +47,9 @@ class SpectraData(HyraxDataset, Dataset):
 
         return (cols, width, height)
 
+    def get_object_id(self, idx):
+        return self.table["object_id"][idx]
+
     def get_flux(self, idx):
         flux = self.table["flux"][idx]
         flux = np.expand_dims(flux, 0)
