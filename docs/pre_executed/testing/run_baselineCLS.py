@@ -33,8 +33,10 @@ for i, ep in enumerate(range(epochs)):
 '''
 
 h.set_config("model.HyraxBaselineCLS.use_probabilities", False)
+h.set_config("data_set.PhotoEventsDataset.use_oversampling", True)
 h.train()
 
 # Inference
 h.set_config("model.HyraxBaselineCLS.use_probabilities", True)
+h.set_config("data_set.PhotoEventsDataset.use_oversampling", False) # Disable oversampling for inference
 h.infer()

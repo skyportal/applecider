@@ -96,12 +96,11 @@ class HyraxBaselineCLS(nn.Module):
         """
 
         labels = batch[1]
-        self.optimizer.zero_grad()
 
         decoded = self.forward(batch)
         loss = self.criterion(decoded, labels)
+        self.optimizer.zero_grad()
         loss.backward()
-
         #gradient clipping
         # TODO: make this a config option, potentially a general
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
@@ -113,7 +112,7 @@ class HyraxBaselineCLS(nn.Module):
         # Additional metrics
         # We wanted epoch-level metrics to assess, but hyrax potentially only allows batch-level metrics here (ask Drew)
         # accuracy, total loss/tot n, any custom metrics
-        return {"loss": loss.item(), "value": numpy_logits[0][1], } #"batch_confusion": numpy_logits[0][0] - numpy_logits[1][0]}
+        return {"loss": loss.item(), "num_tdes": np.sum([labels.cpu().numpy() == 4])}
 
     @staticmethod
     def to_tensor(data_dict):
