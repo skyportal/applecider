@@ -2,8 +2,8 @@
 name = "applecider.models.astrominn.AstroMiNN"
 
 [data_set]
-train_size = 1.0
-validate_size = 0.0
+train_size = 0.8
+validate_size = 0.2
 test_size = 0.0
 
 [model_inputs]
@@ -15,8 +15,8 @@ primary_id_field = "obj_id"
 
 [model_inputs.infer.data]
 dataset_class = "applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
-data_location = "../../../data/preprocessed_ztf_alerts"
-fields = ["image", "metadata", "obj_id"]
+data_location = "../../../data/ztf23_processed_data"
+fields = ["image", "metadata", "target", "obj_id"]
 primary_id_field = "obj_id"
 
 [data_set.ImageAndMetadataDataset]
