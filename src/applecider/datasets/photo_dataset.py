@@ -55,7 +55,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
 
     def ids(self):
         for idx in range(len(self)):
-            yield self.object_ids[idx]
+            yield self.get_object_id(idx)
 
     def get_label(self, idx):
         """get ID label for a specific index"""
