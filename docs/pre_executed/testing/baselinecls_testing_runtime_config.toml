@@ -9,52 +9,44 @@ batch_size = 128
 collate_fn = "applecider.datasets.photo_dataset.collate"
 
 [data_set.PhotoEventsDataset]
-manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
-stats_path = "/Users/dbranton/lincc/incubators/photo_events/feature_stats_day100.npz"
+manifest_path = "../../../data/photo_events/manifest_train.csv"
+stats_path = "../../../data/photo_events/feature_stats_day100.npz"
 horizon = 100.0 # days
-#ideal_class_distribution = [0.2,0.2,0.2,0.2,0.2]
 ideal_class_distribution = [0.3,0.1,0.1,0.3,0.1]
-#ideal_class_distribution = [0.35,0.1,0.1,0.35]
 use_oversampling = true
 
 # Needed for manifest path -- hyrax will fix
 [data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
-manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
+manifest_path = "../../../data/photo_events/manifest_train.csv"
 
 [model_inputs]
 [model_inputs.train.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
-data_location = "/Users/dbranton/lincc/incubators/photo_events/train/"
-
+data_location = "../../../data/photo_events/train/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
 [model_inputs.train.data.dataset_config]
-manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_train.csv"
+manifest_path = "../../../data/photo_events/manifest_train.csv"
 
 [model_inputs.validate.data]
 #[model_inputs.dont_use.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
-data_location = "/Users/dbranton/lincc/incubators/photo_events/val/"
-#data_location = "/work/hdd/bcrv/ffontinelenunes/data/applecider/photo_events/val/"
+data_location = "../../../data/photo_events/val/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
-
 [model_inputs.validate.data.dataset_config]
-#[model_inputs.dont_use.data.dataset_config]
-manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_val.csv"
+manifest_path = "../../../data/photo_events/manifest_val.csv"
 
 [model_inputs.infer.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
-data_location = "/Users/dbranton/lincc/incubators/photo_events/test/"
-#data_location = "/work/hdd/bcrv/ffontinelenunes/data/applecider/photo_events/test/"
+data_location = "../../../data/photo_events/test/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
 [model_inputs.infer.data.dataset_config]
-manifest_path = "/Users/dbranton/lincc/incubators/photo_events/manifest_test.csv"
+manifest_path = "../../../data/photo_events/manifest_test.csv"
 
 [train]
-#The number of epochs to train for.
-epochs = 50
+epochs = 30
 
 [optimizer]
 name = "torch.optim.Adam"
