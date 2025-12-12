@@ -9,20 +9,23 @@ from hyrax.pytorch_ignite import (
 # Path definitions
 pretrain_toml_path = "./baselinecls_pretrain_runtime_config.toml"
 toml_path = "./baselinecls_testing_runtime_config.toml"
-pretrain_weights_path = "./pretrained_weights.pth"
+
 
 h = Hyrax(config_file=toml_path)
 dataset = h.prepare()
 
 # Perform Pre-Training
-pretrain = True
-if pretrain:
+perform_pretrain = True
+if perform_pretrain:
+    pretrain_weights_path = h.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]
     # Prepare empty state_dict for model
     model = setup_model(h.config, dataset["train"])
     initial_state_dict = model.state_dict()
 
     # Perform pre-training
-    pretrainer = Hyrax(config_file=pretrain_toml_path)
+    pretrainer = Hyrax(config_file=toml_path)
+    pretrainer.set_config("model.name", "applecider.models.HyraxBaselineCLS.MPTModel")
+    #pretrainer = Hyrax(config_file=pretrain_toml_path)
     pretrain = pretrainer.train() # Train the pre-trainer
     # Save output weights to file
     weights = pretrain.state_dict()
