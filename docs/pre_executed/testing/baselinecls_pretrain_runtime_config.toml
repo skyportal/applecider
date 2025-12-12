@@ -1,10 +1,8 @@
 [model]
-name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
+name = "applecider.models.HyraxBaselineCLS.MPTModel"
 
 [model.HyraxBaselineCLS]
 use_probabilities = false
-use_pretrained_weights = true
-pretrained_weights_path = "./pretrained_weights.pth"
 
 [data_loader]
 batch_size = 128
