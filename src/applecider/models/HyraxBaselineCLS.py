@@ -244,7 +244,6 @@ class MPTModel(nn.Module):
         mf = masked_tok[:, 1:].contiguous().view(-1)
 
         true_f = data[..., 2].view(-1)
-        #import pdb;pdb.set_trace()
         loss_f = F.mse_loss(f_hat.view(-1)[mf], true_f[mf])
         true_b = data[..., 4:7].argmax(-1).view(-1)
         loss_b = F.cross_entropy(b_hat.view(-1, 3)[mf], true_b[mf])
@@ -253,8 +252,11 @@ class MPTModel(nn.Module):
         dt_gt = dt_gt.view(-1)
         loss_dt = F.mse_loss(dt_hat[..., 0].view(-1)[mf], dt_gt[mf])
 
-        # LAMBDA_F, LAMBDA_B, LAMBDA_DT = 5.0, 3.0, 5.0 TODO: config
-        loss = 5.0 * loss_f + 3.0 * loss_b + 5.0 * loss_dt
+        lambda_f = self.config["model"]["HyraxBaselineCLS"]["lambda_f"]
+        lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
+        lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
+        loss = lambda_f * loss_f * lambda_b * loss_b * lambda_dt * loss_dt
+        #loss = 5.0 * loss_f + 3.0 * loss_b + 5.0 * loss_dt
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
@@ -262,9 +264,8 @@ class MPTModel(nn.Module):
 
         return {"loss": loss.item()}
 
-    @staticmethod
-    def _mask_batch(x, pad_mask):
-        MASK_P = 0.3
+    def _mask_batch(self, x, pad_mask):
+        MASK_P = self.config["model"]["HyraxBaselineCLS"]["mask_p"]
         masked = torch.zeros_like(pad_mask)
         B, L, _ = x.shape
         for b in range(B):

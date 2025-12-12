@@ -6,6 +6,12 @@ use_probabilities = false
 use_pretrained_weights = true
 pretrained_weights_path = "./pretrained_weights.pth"
 
+# pre-training values
+lambda_f = 5.0
+lambda_b = 3.0
+lambda_dt = 5.0
+mask_p = 0.3
+
 [data_loader]
 batch_size = 128
 collate_fn = "applecider.datasets.photo_dataset.collate"
