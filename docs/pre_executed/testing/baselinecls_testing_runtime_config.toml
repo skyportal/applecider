@@ -10,7 +10,7 @@ pretrained_weights_path = "./pretrained_weights.pth"
 lambda_f = 5.0
 lambda_b = 3.0
 lambda_dt = 5.0
-mask_p = 0.3
+mask_p = 0.30
 
 [data_loader]
 batch_size = 128
