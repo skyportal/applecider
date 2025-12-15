@@ -3,8 +3,9 @@ name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
 
 [model.HyraxBaselineCLS]
 use_probabilities = false
-use_pretrained_weights = true
-pretrained_weights_path = "./pretrained_weights.pth"
+
+# Use a pretrained weights file, if path is specified
+pretrained_weights_path = "./pretrained_weights.pth"  # false | <path_to_weights_file>
 
 # pre-training values
 lambda_f = 5.0

@@ -40,7 +40,7 @@ class HyraxBaselineCLS(nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
 
-        if self.config["model"]["HyraxBaselineCLS"]["use_pretrained_weights"]:
+        if self.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]:
             pretrained_path = self.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]
             state_dict = torch.load(pretrained_path)
             self.load_state_dict(state_dict, strict=False)

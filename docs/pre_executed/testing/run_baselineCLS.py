@@ -15,7 +15,7 @@ h = Hyrax(config_file=toml_path)
 dataset = h.prepare()
 
 # Perform Pre-Training
-perform_pretrain = True
+perform_pretrain = False
 if perform_pretrain:
     pretrain_weights_path = h.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]
     # Prepare empty state_dict for model
