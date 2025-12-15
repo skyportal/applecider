@@ -1,37 +1,46 @@
 from hyrax import Hyrax
 from hyrax.config_utils import find_most_recent_results_dir
 import os
+import torch
+from hyrax.pytorch_ignite import (
+            setup_model,
+        )
 
+# Path definitions
+pretrain_toml_path = "./baselinecls_pretrain_runtime_config.toml"
 toml_path = "./baselinecls_testing_runtime_config.toml"
+
+
 h = Hyrax(config_file=toml_path)
-
-# For training
-
-
-# For inference
-#h.set_config("model_inputs.data.dataset_class", "AppleCider.models.hyrax_models.photo_dataset.PhotoEventsDataset")
-
 dataset = h.prepare()
-'''
-epochs = 21
-for i, ep in enumerate(range(epochs)):
-    # Training
-    h.set_config("model.HyraxBaselineCLS.use_probabilities", False)
-    if i > 0:
-        train_dir = find_most_recent_results_dir(h.config, "train")
-        epoch_checkpoint = train_dir / f"checkpoint_epoch_{i}.pt"
-        h.set_config("train.resume", str(epoch_checkpoint))
-    h.set_config("train.epochs", ep+1)
-    h.train()
 
-    # Inference every 3
-    if ep % 3 == 0:
-        h.set_config("model.HyraxBaselineCLS.use_probabilities", True)
-        h.infer()
+# Perform Pre-Training
+perform_pretrain = False
+if perform_pretrain:
+    pretrain_weights_path = h.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]
+    # Prepare empty state_dict for model
+    model = setup_model(h.config, dataset["train"])
+    initial_state_dict = model.state_dict()
+
+    # Perform pre-training
+    pretrainer = Hyrax(config_file=toml_path)
+    pretrainer.set_config("model.name", "applecider.models.HyraxBaselineCLS.MPTModel")
+    #pretrainer = Hyrax(config_file=pretrain_toml_path)
+    pretrain = pretrainer.train() # Train the pre-trainer
+    # Save output weights to file
+    weights = pretrain.state_dict()
+
+    # Override matching weight fields in the initial model state dict
+    for k, v in weights.items():
+        if k.startswith("head."):  # skip classifier head
+            continue
+        if k in initial_state_dict and initial_state_dict[k].shape == v.shape:
+            initial_state_dict[k] = v
+    torch.save(initial_state_dict, pretrain_weights_path)
+
 
 # Training
-'''
-
+#h.set_config("model", "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS")
 h.set_config("model.HyraxBaselineCLS.use_probabilities", False)
 h.set_config("data_set.PhotoEventsDataset.use_oversampling", True)
 h.train()
