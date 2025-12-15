@@ -46,8 +46,7 @@ class HyraxBaselineCLS(nn.Module):
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
         pad_mask: (B, L) boolean
         """
-        data = x[0]
-        pad = x[2]
+        data, pad, _ = x
 
         B, L, _ = data.shape
 
@@ -95,7 +94,7 @@ class HyraxBaselineCLS(nn.Module):
             Dictionary containing the loss value for the current batch.
         """
 
-        labels = batch[1]
+        _, _, labels = batch
 
         decoded = self.forward(batch)
         loss = self.criterion(decoded, labels)
@@ -134,18 +133,26 @@ class HyraxBaselineCLS(nn.Module):
         torch.Tensor
             A tensor of shape (L, 7), where L is the sequence length.
         """
+        import numpy as np
         # Assuming reading in a data dictionary from an alert npy file
-        photo_tensor, label_tensor = data_dict["data"]["photometry"], data_dict["data"]["label"]
-        # Use mean and std from data_dict to normalize continuous features
-        photo_tensor[..., :4] = (photo_tensor[..., :4] - data_dict["data"]["mean"]) / (data_dict["data"]["std"] + 1e-8)
 
-        if "pad_mask" in data_dict["data"].keys():
-            mask_tensor = data_dict["data"]["pad_mask"]
-            return (photo_tensor, label_tensor, mask_tensor)
+        if "data" not in data_dict:
+            raise ValueError("Data dictionary must contain 'data' key.")
+
+        data = data_dict["data"]
+        photo_tensor = data["photometry"]
+        label_tensor = np.asarray(data.get("label", []), dtype=np.int64)
+
+        # Use mean and std from data_dict to normalize continuous features
+        photo_tensor[..., :4] = (photo_tensor[..., :4] - data["mean"]) / (data["std"] + 1e-8)
+
+        if "pad_mask" in data.keys():
+            mask_tensor = data["pad_mask"]
+            return (photo_tensor, mask_tensor, label_tensor)
 
         # Generate all-false padding mask if not provided, useful for infer step
-        false_mask = torch.zeros(photo_tensor.size(0), photo_tensor.size(1), dtype=torch.bool)
-        return (photo_tensor, label_tensor, false_mask)
+        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]), dtype=bool)
+        return (photo_tensor, false_mask, label_tensor)
 
 class FocalLoss(nn.Module):
     def __init__(self, gamma: float = 2.0, alpha: torch.Tensor = None, eps: float = 0, reduction: str = 'mean'): #eps=0.1

@@ -40,7 +40,7 @@ manifest_path = "../../../data/photo_events/manifest_val.csv"
 [model_inputs.infer.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
 data_location = "../../../data/photo_events/test/"
-fields = ["photometry", "label", "mean", "std"]
+fields = ["photometry", "mean", "std"]
 primary_id_field = "object_id"
 [model_inputs.infer.data.dataset_config]
 manifest_path = "../../../data/photo_events/manifest_test.csv"

@@ -99,7 +99,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         one_hot_band = one_hot_encoding[band.astype(np.int64)]  # (L, 3)
 
         # Result is a (L, 7) tensor (L = sequence length)
-        return torch.from_numpy(np.concatenate([vec4, one_hot_band], 1))  # (L, 7)
+        return np.concatenate([vec4, one_hot_band], 1)  # (L, 7)
 
     def get_mean(self, idx):
         """get feature means from stats file"""
@@ -115,29 +115,38 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         else:
             return len(self.filenames)
 
+    @staticmethod
+    def collate(batch):
+        '''custom collate function for photo events dataset'''
+        seqs = []
+        labels = []
+        for i in batch:
+            seqs += [i["data"]["photometry"]]
+            if "label" in i["data"]:
+                labels += [i["data"]["label"]]
 
-def collate(batch):
-    '''custom collate function for photo events dataset'''
-    seqs = []
-    labels = []
-    for i in batch:
-        seqs += [i["data"]["photometry"]]
-        labels += [i["data"]["label"]]
+        lens = [s.shape[0] for s in seqs]
+        max_len = max(lens)
+        padded = []
+        for s in seqs:
+            pad_width = ((0, max_len - s.shape[0]), (0, 0))
+            padded.append(np.pad(s, pad_width, mode='constant', constant_values=0.0))
+        pad = np.stack(padded, axis=0)
+        # pad  = pad_sequence(seqs, batch_first=True)            # (B, L, 7)
 
-    lens = [s.size(0) for s in seqs]
-    pad  = pad_sequence(seqs, batch_first=True)            # (B, L, 7)
-    mask = torch.stack([torch.cat([torch.zeros(l), torch.ones(pad.size(1)-l)]) for l in lens]).bool()
-    # adjust padding mask to account for CLS at idx=0
-    pad_mask = torch.cat(
-            [torch.zeros(len(batch), 1, device=mask.device, dtype=torch.bool),
-             mask], dim=1
-        )
-    object_ids = [b["object_id"] for b in batch]
-    return {"data": {"photometry": pad,
-                     "label": torch.tensor(labels),
-                     "pad_mask": pad_mask,
-                     "mean": torch.tensor(batch[0]["data"]["mean"]),
-                     "std": torch.tensor(batch[0]["data"]["std"]),
-                     },
-            "object_id": object_ids,
-            }
+        mask = np.stack([np.concatenate([np.zeros(l), np.ones(pad.shape[1]-l)]) for l in lens]).astype(bool)
+        # adjust padding mask to account for CLS at idx=0
+        pad_mask = np.concatenate(
+                [np.zeros((len(batch), 1), dtype=bool),
+                mask], axis=1
+            )
+
+        return {
+            "data": {
+                "photometry": pad,
+                "label": np.array(labels),
+                "pad_mask": pad_mask,
+                "mean": np.array(batch[0]["data"]["mean"]),
+                "std": np.array(batch[0]["data"]["std"]),
+            },
+        }
