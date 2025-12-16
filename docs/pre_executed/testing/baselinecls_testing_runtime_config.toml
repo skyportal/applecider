@@ -44,6 +44,7 @@ fields = ["photometry", "mean", "std"]
 primary_id_field = "object_id"
 [model_inputs.infer.data.dataset_config]
 manifest_path = "../../../data/photo_events/manifest_test.csv"
+use_oversampling = false
 
 [train]
 epochs = 30

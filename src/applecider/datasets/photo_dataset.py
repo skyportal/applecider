@@ -125,8 +125,8 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
             if "label" in i["data"]:
                 labels += [i["data"]["label"]]
 
-        lens = [s.shape[0] for s in seqs]
-        max_len = max(lens)
+        lengths = [s.shape[0] for s in seqs]
+        max_len = max(lengths)
         padded = []
         for s in seqs:
             pad_width = ((0, max_len - s.shape[0]), (0, 0))
@@ -134,7 +134,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         pad = np.stack(padded, axis=0)
         # pad  = pad_sequence(seqs, batch_first=True)            # (B, L, 7)
 
-        mask = np.stack([np.concatenate([np.zeros(l), np.ones(pad.shape[1]-l)]) for l in lens]).astype(bool)
+        mask = np.stack([np.concatenate([np.zeros(l), np.ones(pad.shape[1]-l)]) for l in lengths]).astype(bool)
         # adjust padding mask to account for CLS at idx=0
         pad_mask = np.concatenate(
                 [np.zeros((len(batch), 1), dtype=bool),

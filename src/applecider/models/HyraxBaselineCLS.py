@@ -151,7 +151,8 @@ class HyraxBaselineCLS(nn.Module):
             return (photo_tensor, mask_tensor, label_tensor)
 
         # Generate all-false padding mask if not provided, useful for infer step
-        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]), dtype=bool)
+        # The +1 is to account for the CLS token added in the model.
+        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]+1), dtype=bool)
         return (photo_tensor, false_mask, label_tensor)
 
 class FocalLoss(nn.Module):
