@@ -134,8 +134,12 @@ class HyraxBaselineCLS(nn.Module):
         torch.Tensor
             A tensor of shape (L, 7), where L is the sequence length.
         """
+
+        # NOTE: Hyrax will copy this method into a standalone module during
+        # training so that it can be used for inference. However, Hyrax cannot
+        # copy imports at the top of the file. Since we depend on numpy in this
+        # method, we'll import it here to make sure it is present for inference.
         import numpy as np
-        # Assuming reading in a data dictionary from an alert npy file
 
         if "data" not in data_dict:
             raise ValueError("Data dictionary must contain 'data' key.")

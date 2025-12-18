@@ -200,7 +200,13 @@ class SpectraNet(nn.Module):
     def to_tensor(data_dict):
         """This method will receive a dictionary of data and should convert it
         to the relevant numpy arrays needed for either training or inference."""
+
+        # NOTE: Hyrax will copy this method into a standalone module during
+        # training so that it can be used for inference. However, Hyrax cannot
+        # copy imports at the top of the file. Since we depend on numpy in this
+        # method, we'll import it here to make sure it is present for inference.
         import numpy as np
+
         if "data" not in data_dict:
             raise ValueError("Data dictionary must have a 'data' key.")
 

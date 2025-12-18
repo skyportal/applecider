@@ -301,6 +301,10 @@ class AstroMiNN(nn.Module):
         processing.
         """
 
+        # NOTE: Hyrax will copy this method into a standalone module during
+        # training so that it can be used for inference. However, Hyrax cannot
+        # copy imports at the top of the file. Since we depend on numpy in this
+        # method, we'll import it here to make sure it is present for inference.
         import numpy as np
 
         if "data" not in data_dict:
