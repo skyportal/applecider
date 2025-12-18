@@ -4,6 +4,15 @@ name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
 [model.HyraxBaselineCLS]
 use_probabilities = false
 
+# Use a pretrained weights file, if path is specified
+pretrained_weights_path = "./pretrained_weights.pth"  # false | <path_to_weights_file>
+
+# pre-training values
+lambda_f = 5.0
+lambda_b = 3.0
+lambda_dt = 5.0
+mask_p = 0.30
+
 [data_loader]
 batch_size = 128
 collate_fn = "applecider.datasets.photo_dataset.collate"
@@ -22,20 +31,20 @@ use_oversampling = true
 [model_inputs]
 [model_inputs.train.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
-data_location = "../../../data/photo_events/train/"
+data_location = "../../../../photo_events/train/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
 [model_inputs.train.data.dataset_config]
-manifest_path = "../../../data/photo_events/manifest_train.csv"
+manifest_path = "../../../../photo_events/manifest_train.csv"
 
 [model_inputs.validate.data]
 #[model_inputs.dont_use.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
-data_location = "../../../data/photo_events/val/"
+data_location = "../../../../photo_events/val/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
 [model_inputs.validate.data.dataset_config]
-manifest_path = "../../../data/photo_events/manifest_val.csv"
+manifest_path = "../../../../photo_events/manifest_val.csv"
 
 [model_inputs.infer.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
@@ -47,7 +56,7 @@ manifest_path = "../../../data/photo_events/manifest_test.csv"
 use_oversampling = false
 
 [train]
-epochs = 30
+epochs = 3
 
 [optimizer]
 name = "torch.optim.Adam"
