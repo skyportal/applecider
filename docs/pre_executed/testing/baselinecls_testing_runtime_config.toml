@@ -8,16 +8,16 @@ use_probabilities = false
 batch_size = 128
 collate_fn = "applecider.datasets.photo_dataset.collate"
 
-[data_set.PhotoEventsDataset]
+# [data_set.PhotoEventsDataset]
+# manifest_path = "../../../data/photo_events/manifest_train.csv"
+
+# Needed for manifest path -- hyrax will fix
+[data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
 manifest_path = "../../../data/photo_events/manifest_train.csv"
 stats_path = "../../../data/photo_events/feature_stats_day100.npz"
 horizon = 100.0 # days
 ideal_class_distribution = [0.3,0.1,0.1,0.3,0.1]
 use_oversampling = true
-
-# Needed for manifest path -- hyrax will fix
-[data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
-manifest_path = "../../../data/photo_events/manifest_train.csv"
 
 [model_inputs]
 [model_inputs.train.data]

@@ -13,13 +13,15 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
     def __init__(self, config: dict, data_location: Union[Path, str] = None, horizon: float = 10.0):
         self.data_location = data_location
         self.filenames = sorted(list(Path(self.data_location).glob('*.npz')))
-        #self.manifest_df = pd.read_csv(config["data_set"]["PhotoEventsDataset"]["manifest_path"])
-        self.manifest_df = pd.read_csv(config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]["manifest_path"])
+
+        self.photo_config = config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]
+
+        self.manifest_df = pd.read_csv(self.photo_config["manifest_path"])
         self.manifest_df = self.manifest_df.sort_values("obj_id", inplace=False)
         self.object_ids = self.manifest_df["obj_id"].tolist()
-        self.horizon = config["data_set"]["PhotoEventsDataset"]["horizon"]
-        self.st = np.load(Path(config["data_set"]["PhotoEventsDataset"]["stats_path"]))
-        self.use_oversampling = config["data_set"]["PhotoEventsDataset"]["use_oversampling"]
+        self.horizon = self.photo_config["horizon"]
+        self.st = np.load(Path(self.photo_config["stats_path"]))
+        self.use_oversampling = self.photo_config["use_oversampling"]
 
         # Map original subclass IDs to broader classes
         self.taxonomy_mapper = {0: 0,  # SN Ia -> SNI
@@ -34,7 +36,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
                                 9: 4,  # Tidal Disruption Event -> TDE
                                 }
 
-        ideal_class_distribution = config["data_set"]["PhotoEventsDataset"]["ideal_class_distribution"]
+        ideal_class_distribution = self.photo_config["ideal_class_distribution"]
         class_at_index = [self.taxonomy_mapper[label] for label in
                           self.manifest_df.label.tolist()]
         if self.use_oversampling:
@@ -69,7 +71,6 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
 
     def get_photometry(self, idx):
         """get photometry tensor for a specific index"""
-        #if config["use_oversampling"]
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
         #print(self.manifest_df.iloc[idx]["obj_id"], self.filenames[idx], self.manifest_df.iloc[idx].label)
