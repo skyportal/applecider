@@ -40,7 +40,7 @@ class HyraxBaselineCLS(nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
 
-    def forward(self, x, pad=None):
+    def forward(self, x):
         """
         x: (B, L, 7)  - the raw event tensor from build_event_tensor
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
@@ -65,10 +65,11 @@ class HyraxBaselineCLS(nn.Module):
         tok = self.cls_tok.expand(B, -1, -1)      # (B,1,d_model)
         hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
 
+        pad_extended = F.pad(pad, (1, 0), value=False)
+
         # encode
         # In inference this is a convergence point
-        z = self.encoder(hte, src_key_padding_mask=pad)  # (B, L+1, d_model)
-
+        z = self.encoder(hte, src_key_padding_mask=pad_extended)  # (B, L+1, d_model)
         output = self.norm(z[:, 0])  # (B, d_model )
 
         if self.classification:
