@@ -5,7 +5,7 @@ name = "applecider.models.spectranet.SpectraNet"
 
 # Note - the sub-table (model_inputs.<sub-table>) can be named anything you like.
 
-[model_inputs.data]
+[model_inputs.train.data]
 
 # Name of the dataset class to use, or the import path to an external dataset class.
 
