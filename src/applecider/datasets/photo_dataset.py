@@ -13,13 +13,15 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
     def __init__(self, config: dict, data_location: Union[Path, str] = None, horizon: float = 10.0):
         self.data_location = data_location
         self.filenames = sorted(list(Path(self.data_location).glob('*.npz')))
-        #self.manifest_df = pd.read_csv(config["data_set"]["PhotoEventsDataset"]["manifest_path"])
-        self.manifest_df = pd.read_csv(config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]["manifest_path"])
+
+        self.photo_config = config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]
+
+        self.manifest_df = pd.read_csv(self.photo_config["manifest_path"])
         self.manifest_df = self.manifest_df.sort_values("obj_id", inplace=False)
         self.object_ids = self.manifest_df["obj_id"].tolist()
-        self.horizon = config["data_set"]["PhotoEventsDataset"]["horizon"]
-        self.st = np.load(Path(config["data_set"]["PhotoEventsDataset"]["stats_path"]))
-        self.use_oversampling = config["data_set"]["PhotoEventsDataset"]["use_oversampling"]
+        self.horizon = self.photo_config["horizon"]
+        self.st = np.load(Path(self.photo_config["stats_path"]))
+        self.use_oversampling = self.photo_config["use_oversampling"]
 
         # Map original subclass IDs to broader classes
         self.taxonomy_mapper = {0: 0,  # SN Ia -> SNI
@@ -34,7 +36,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
                                 9: 4,  # Tidal Disruption Event -> TDE
                                 }
 
-        ideal_class_distribution = config["data_set"]["PhotoEventsDataset"]["ideal_class_distribution"]
+        ideal_class_distribution = self.photo_config["ideal_class_distribution"]
         class_at_index = [self.taxonomy_mapper[label] for label in
                           self.manifest_df.label.tolist()]
         if self.use_oversampling:
@@ -69,7 +71,6 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
 
     def get_photometry(self, idx):
         """get photometry tensor for a specific index"""
-        #if config["use_oversampling"]
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
         #print(self.manifest_df.iloc[idx]["obj_id"], self.filenames[idx], self.manifest_df.iloc[idx].label)
@@ -99,7 +100,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         one_hot_band = one_hot_encoding[band.astype(np.int64)]  # (L, 3)
 
         # Result is a (L, 7) tensor (L = sequence length)
-        return torch.from_numpy(np.concatenate([vec4, one_hot_band], 1))  # (L, 7)
+        return np.concatenate([vec4, one_hot_band], 1)  # (L, 7)
 
     def get_mean(self, idx):
         """get feature means from stats file"""
@@ -115,29 +116,37 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         else:
             return len(self.filenames)
 
+    @staticmethod
+    def collate(batch):
+        '''custom collate function for photo events dataset'''
+        seqs = []
+        labels = []
+        for i in batch:
+            seqs += [i["data"]["photometry"]]
+            if "label" in i["data"]:
+                labels += [i["data"]["label"]]
 
-def collate(batch):
-    '''custom collate function for photo events dataset'''
-    seqs = []
-    labels = []
-    for i in batch:
-        seqs += [i["data"]["photometry"]]
-        labels += [i["data"]["label"]]
+        lengths = [s.shape[0] for s in seqs]
+        max_len = max([257, max(lengths)])
 
-    lens = [s.size(0) for s in seqs]
-    pad  = pad_sequence(seqs, batch_first=True)            # (B, L, 7)
-    mask = torch.stack([torch.cat([torch.zeros(l), torch.ones(pad.size(1)-l)]) for l in lens]).bool()
-    # adjust padding mask to account for CLS at idx=0
-    pad_mask = torch.cat(
-            [torch.zeros(len(batch), 1, device=mask.device, dtype=torch.bool),
-             mask], dim=1
-        )
-    object_ids = [b["object_id"] for b in batch]
-    return {"data": {"photometry": pad,
-                     "label": torch.tensor(labels),
-                     "pad_mask": pad_mask,
-                     "mean": torch.tensor(batch[0]["data"]["mean"]),
-                     "std": torch.tensor(batch[0]["data"]["std"]),
-                     },
-            "object_id": object_ids,
-            }
+        # Create padding arrays: False where there is data, True where there is padding
+        padded = []
+        for s in seqs:
+            pad_width = ((0, max_len - s.shape[0]), (0, 0))
+            padded.append(np.pad(s, pad_width, mode='constant', constant_values=0.0))
+        pad = np.stack(padded, axis=0)
+        pad_mask = np.stack([np.concatenate([np.zeros(l), np.ones(pad.shape[1]-l)]) for l in lengths]).astype(bool)
+
+        # Truncate to a consistent sequence length
+        pad = pad[:, :257, :]
+        pad_mask = pad_mask[:, :257]
+
+        return {
+            "data": {
+                "photometry": pad,
+                "label": np.array(labels),
+                "pad_mask": pad_mask,
+                "mean": np.array(batch[0]["data"]["mean"]),
+                "std": np.array(batch[0]["data"]["std"]),
+            },
+        }

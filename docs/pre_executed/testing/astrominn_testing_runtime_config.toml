@@ -12,12 +12,16 @@ dataset_class = "applecider.datasets.image_and_metadata_dataset.ImageAndMetadata
 data_location = "../../../data/preprocessed_ztf_alerts"
 fields = ["image", "metadata", "target", "obj_id"]
 primary_id_field = "obj_id"
+[model_inputs.train.data.dataset_config]
+use_oversampling = true
 
 [model_inputs.infer.data]
 dataset_class = "applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
 data_location = "../../../data/preprocessed_ztf_alerts"
 fields = ["image", "metadata", "obj_id"]
 primary_id_field = "obj_id"
+[model_inputs.infer.data.dataset_config]
+use_oversampling = false
 
 [data_set.ImageAndMetadataDataset]
 class_distribution = [0.3, 0.1, 0.1, 0.3, 0.1]
