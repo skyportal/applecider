@@ -17,16 +17,16 @@ mask_p = 0.30
 batch_size = 128
 collate_fn = "applecider.datasets.photo_dataset.collate"
 
-[data_set.PhotoEventsDataset]
-manifest_path = "../../../../photo_events/manifest_train.csv"
-stats_path = "../../../../photo_events/feature_stats_day100.npz"
-horizon = 100.0 # days
-ideal_class_distribution = [0.3,0.1,0.1,0.3,0.1]
-use_oversampling = true
+# [data_set.PhotoEventsDataset]
+# manifest_path = "../../../data/photo_events/manifest_train.csv"
 
 # Needed for manifest path -- hyrax will fix
 [data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
-manifest_path = "../../../../photo_events/manifest_train.csv"
+manifest_path = "../../../data/photo_events/manifest_train.csv"
+stats_path = "../../../data/photo_events/feature_stats_day100.npz"
+horizon = 100.0 # days
+ideal_class_distribution = [0.3,0.1,0.1,0.3,0.1]
+use_oversampling = true
 
 [model_inputs]
 [model_inputs.train.data]
@@ -48,11 +48,12 @@ manifest_path = "../../../../photo_events/manifest_val.csv"
 
 [model_inputs.infer.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
-data_location = "../../../../photo_events/test/"
-fields = ["photometry", "label", "mean", "std"]
+data_location = "../../../data/photo_events/test/"
+fields = ["photometry", "mean", "std"]
 primary_id_field = "object_id"
 [model_inputs.infer.data.dataset_config]
-manifest_path = "../../../../photo_events/manifest_test.csv"
+manifest_path = "../../../data/photo_events/manifest_test.csv"
+use_oversampling = false
 
 [train]
 epochs = 3

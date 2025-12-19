@@ -296,10 +296,23 @@ class AstroMiNN(nn.Module):
 
 
     @staticmethod
-    def to_tensor(data_dict):
+    def to_tensor(data_dict: dict) -> tuple:
+        """Convert input data dictionary to a tuple of numpy arrays for model
+        processing.
+        """
+
+        # NOTE: Hyrax will copy this method into a standalone module during
+        # training so that it can be used for inference. However, Hyrax cannot
+        # copy imports at the top of the file. Since we depend on numpy in this
+        # method, we'll import it here to make sure it is present for inference.
+        import numpy as np
+
+        if "data" not in data_dict:
+            raise ValueError("Input data dictionary does not contain 'data' key.")
+
         data = data_dict['data']
 
-        metadata = torch.as_tensor(data['metadata'], dtype=torch.float32)
-        images = torch.as_tensor(data['image'], dtype=torch.float32)
-        labels = torch.as_tensor(data['target'], dtype=torch.float32)
+        metadata = np.asarray(data['metadata'], dtype=np.float32)
+        images = np.asarray(data['image'], dtype=np.float32)
+        labels = np.asarray(data.get('target', []), dtype=np.float32)
         return (metadata, images, labels)

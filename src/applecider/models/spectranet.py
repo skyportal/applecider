@@ -167,10 +167,9 @@ class SpectraNet(nn.Module):
             )
 
     def forward(self, batch):
-        if isinstance(batch, tuple):
-            x, _, _ = batch
-        else:
-            x = batch
+        # batch is a tuple of (data, labels, redshifts). When training, labels
+        # and redshifts are present, during inference they are empty tensors.
+        x, _, _ = batch
 
         x = self.all_stages(x)
 
@@ -199,11 +198,22 @@ class SpectraNet(nn.Module):
 
     @staticmethod
     def to_tensor(data_dict):
-        """This method will receive a dictionary
-        of data and should convert it to the relevant tensors needed for either
-        training or inference."""
+        """This method will receive a dictionary of data and should convert it
+        to the relevant numpy arrays needed for either training or inference."""
+
+        # NOTE: Hyrax will copy this method into a standalone module during
+        # training so that it can be used for inference. However, Hyrax cannot
+        # copy imports at the top of the file. Since we depend on numpy in this
+        # method, we'll import it here to make sure it is present for inference.
+        import numpy as np
+
+        if "data" not in data_dict:
+            raise ValueError("Data dictionary must have a 'data' key.")
+
+        data = data_dict["data"]
         return (
-            torch.tensor(data_dict["data"]["flux"]).to(torch.float32),
-            torch.tensor(data_dict["data"]["label"]).to(torch.int16),
-            torch.tensor(data_dict["data"]["redshift"]).to(torch.float32),
+            np.asarray(data.get("flux", []), dtype=np.float32),
+            # Return empty arrays even if the labels/redshifts are not present
+            np.asarray(data.get("label", []), dtype=np.int16),
+            np.asarray(data.get("redshift", []), dtype=np.float32),
         )

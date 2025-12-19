@@ -113,7 +113,7 @@ class_order = 9
 flat_dim = 3072
 
 
-[data_set.ImageAndMetadataDataset]
+[data_set."applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"]
 # Defines the maximum number of alerts per sample to work with. Use <= 0 for all available alerts.
 alert = 0
 
@@ -123,6 +123,10 @@ augment = true
 
 classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN', 'Tidal Disruption Event']
 
+# Whether to over sample the minority classes during training
+use_oversampling = false
+# The preferred percentage distribution of classes when oversampling. Length
+# must match number of classes.
 class_distribution = [0.3, 0.1, 0.1, 0.3, 0.1]
 
 cutout_size = 63

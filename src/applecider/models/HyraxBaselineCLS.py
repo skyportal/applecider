@@ -46,14 +46,13 @@ class HyraxBaselineCLS(nn.Module):
             self.load_state_dict(state_dict, strict=False)
             print(f"Loaded pretrained weights from {pretrained_path}")
 
-    def forward(self, x, pad=None):
+    def forward(self, x):
         """
         x: (B, L, 7)  - the raw event tensor from build_event_tensor
             channels: [ dt, dt_prev, logf, logfe, one-hot-band(3) ]
         pad_mask: (B, L) boolean
         """
-        data = x[0]
-        pad = x[2]
+        data, pad, _ = x
 
         B, L, _ = data.shape
 
@@ -72,10 +71,11 @@ class HyraxBaselineCLS(nn.Module):
         tok = self.cls_tok.expand(B, -1, -1)      # (B,1,d_model)
         hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
 
+        pad_extended = F.pad(pad, (1, 0), value=False)
+
         # encode
         # In inference this is a convergence point
-        z = self.encoder(hte, src_key_padding_mask=pad)  # (B, L+1, d_model)
-
+        z = self.encoder(hte, src_key_padding_mask=pad_extended)  # (B, L+1, d_model)
         output = self.norm(z[:, 0])  # (B, d_model )
 
         if self.classification:
@@ -101,7 +101,7 @@ class HyraxBaselineCLS(nn.Module):
             Dictionary containing the loss value for the current batch.
         """
 
-        labels = batch[1]
+        _, _, labels = batch
 
         decoded = self.forward(batch)
         loss = self.criterion(decoded, labels)
@@ -140,18 +140,31 @@ class HyraxBaselineCLS(nn.Module):
         torch.Tensor
             A tensor of shape (L, 7), where L is the sequence length.
         """
-        # Assuming reading in a data dictionary from an alert npy file
-        photo_tensor, label_tensor = data_dict["data"]["photometry"], data_dict["data"]["label"]
-        # Use mean and std from data_dict to normalize continuous features
-        photo_tensor[..., :4] = (photo_tensor[..., :4] - data_dict["data"]["mean"]) / (data_dict["data"]["std"] + 1e-8)
 
-        if "pad_mask" in data_dict["data"].keys():
-            mask_tensor = data_dict["data"]["pad_mask"]
-            return (photo_tensor, label_tensor, mask_tensor)
+        # NOTE: Hyrax will copy this method into a standalone module during
+        # training so that it can be used for inference. However, Hyrax cannot
+        # copy imports at the top of the file. Since we depend on numpy in this
+        # method, we'll import it here to make sure it is present for inference.
+        import numpy as np
+
+        if "data" not in data_dict:
+            raise ValueError("Data dictionary must contain 'data' key.")
+
+        data = data_dict["data"]
+        photo_tensor = data["photometry"]
+        label_tensor = np.asarray(data.get("label", []), dtype=np.int64)
+
+        # Use mean and std from data_dict to normalize continuous features
+        photo_tensor[..., :4] = (photo_tensor[..., :4] - data["mean"]) / (data["std"] + 1e-8)
+
+        if "pad_mask" in data.keys():
+            mask_tensor = data["pad_mask"]
+            return (photo_tensor, mask_tensor, label_tensor)
 
         # Generate all-false padding mask if not provided, useful for infer step
-        false_mask = torch.zeros(photo_tensor.size(0), photo_tensor.size(1), dtype=torch.bool)
-        return (photo_tensor, label_tensor, false_mask)
+        # The +1 is to account for the CLS token added in the model.
+        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]+1), dtype=bool)
+        return (photo_tensor, false_mask, label_tensor)
 
 class FocalLoss(nn.Module):
     def __init__(self, gamma: float = 2.0, alpha: torch.Tensor = None, eps: float = 0, reduction: str = 'mean'): #eps=0.1

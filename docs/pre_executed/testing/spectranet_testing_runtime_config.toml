@@ -5,16 +5,21 @@ name = "applecider.models.spectranet.SpectraNet"
 
 # Note - the sub-table (model_inputs.<sub-table>) can be named anything you like.
 
-[model_inputs.train.data]
-
 # Name of the dataset class to use, or the import path to an external dataset class.
 
 # e.g. "HyraxCifarDataSet", "user_pkg.data_set.ExternalDataset".
+# Note - the sub-table (model_inputs.train.<sub-table>) can be named anything you like.
 
+[model_inputs.train.data]
 dataset_class = "applecider.datasets.spectra_dataset.SpectraData"
 fields = ["flux", "label", "redshift"]
+data_location = "../../../data/spectra_data/train.pt"
 
-data_location = "/Users/maxwest/data/train.pt"
+[model_inputs.infer.data]
+dataset_class = "applecider.datasets.spectra_dataset.SpectraData"
+fields = ["flux"]
+data_location = "../../../data/spectra_data/test.pt"
+primary_id_field = "object_id"
 
 [train]
 epochs = 1

@@ -31,7 +31,7 @@ CLASSES = [
 class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
     def __init__(self, config, data_location):
 
-        self.dataset_config = config['data_set']['ImageAndMetadataDataset']
+        self.dataset_config = config['data_set']['applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset']
 
         self.all_samples = self.dataset_config['all_samples']
         self.augment = self.dataset_config['augment']
@@ -59,10 +59,12 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
                     continue
 
         # Prepare oversampling mixin with class distribution and class at index
-        self.prepare_over_sampling(
-            self.dataset_config["class_distribution"],
-            self.class_at_index
-        )
+        self.use_oversampling = self.dataset_config['use_oversampling']
+        if self.use_oversampling:
+            self.prepare_over_sampling(
+                self.dataset_config["class_distribution"],
+                self.class_at_index
+            )
         self.original_count = len(self.raw_files)
 
         super().__init__(config)
@@ -70,16 +72,19 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
 
     def get_metadata(self, index):
         # Method to retrieve metadata at the specified index
-        index, is_oversampled = self.retrieve_oversampled_index(index)
+        if self.use_oversampling:
+            index, is_oversampled = self.retrieve_oversampled_index(index)
         return self.raw_files[index].get('metadata')
 
     def get_image(self, index):
         # Method to retrieve image at the specified index
+        if self.use_oversampling:
+            index, is_oversampled = self.retrieve_oversampled_index(index)
+
         if self.enable_cache and index in self.image_cache:
             image = self.image_cache[index]
         else:
-            oversampled_index, is_oversampled = self.retrieve_oversampled_index(index)
-            image = self.raw_files[oversampled_index].get('image')
+            image = self.raw_files[index].get('image')
 
             if "vit_tower" in self.dataset_config["tags"]:
                 i1 = int((63-self.dataset_config["patch_size"][0])/2)
@@ -123,8 +128,9 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
         np.ndarray
             The one hot target vector for the specified index.
         """
-        index_found, is_oversampled = self.retrieve_oversampled_index(index)
-        original_class = self.raw_files[index_found].get('target')
+        if self.use_oversampling:
+            index, is_oversampled = self.retrieve_oversampled_index(index)
+        original_class = self.raw_files[index].get('target')
         target = np.zeros(len(CLASSES))
 
         for idy, category in enumerate(CLASSES):
@@ -147,8 +153,9 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
         np.ndarray
             The one hot real target vector for the specified index.
         """
-        index_found, is_oversampled = self.retrieve_oversampled_index(index)
-        original_class = self.raw_files[index_found].get('target')
+        if self.use_oversampling:
+            index, is_oversampled = self.retrieve_oversampled_index(index)
+        original_class = self.raw_files[index].get('target')
         real_target = np.zeros(len(REAL_CLASSES))
 
         for idy, category in enumerate(REAL_CLASSES):
@@ -160,8 +167,9 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
 
     def get_obj_id(self, index):
         # Method to retrieve object ID at the specified index
-        index_found, is_oversampled = self.retrieve_oversampled_index(index)
-        return self.raw_files[index_found].get('obj_id')
+        if self.use_oversampling:
+            index, is_oversampled = self.retrieve_oversampled_index(index)
+        return self.raw_files[index].get('obj_id')
 
 
     def ids(self):
@@ -169,9 +177,13 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
         for idx in range(len(self)):
             yield self.get_obj_id(idx)
 
+
     def __len__(self):
         # Return the total number of items in the dataset
-        return self.total_count_with_oversampling
+        if self.use_oversampling:
+            return self.total_count_with_oversampling
+        else:
+            return len(self.raw_files)
 
 
     def __getitem__(self, index):
