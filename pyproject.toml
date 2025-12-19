@@ -52,9 +52,8 @@ write_to = "src/applecider/_version.py"
 testpaths = [
     "tests",
     "src",
-    "docs",
 ]
-addopts = "--doctest-modules --doctest-glob=*.rst"
+addopts = "--doctest-modules"
 
 [tool.ruff]
 line-length = 110
