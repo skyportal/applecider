@@ -53,7 +53,7 @@ testpaths = [
     "tests",
     "src",
 ]
-addopts = "--doctest-modules --doctest-glob=*.rst"
+addopts = "--doctest-modules"
 
 [tool.ruff]
 line-length = 110
