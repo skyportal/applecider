@@ -1,32 +1,11 @@
 [model]
 name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
 
-[model.HyraxBaselineCLS]
-use_probabilities = false
-
-# Use a pretrained weights file, if path is specified
-pretrained_weights_path = "./pretrained_weights.pth"  # false | <path_to_weights_file>
-
-# pre-training values
-lambda_f = 5.0
-lambda_b = 3.0
-lambda_dt = 5.0
-mask_p = 0.30
+#[model.HyraxBaselineCLS]
 
 [data_loader]
 batch_size = 128
 collate_fn = "applecider.datasets.photo_dataset.collate"
-
-# [data_set.PhotoEventsDataset]
-# manifest_path = "../../../data/photo_events/manifest_train.csv"
-
-# Needed for manifest path -- hyrax will fix
-[data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
-manifest_path = "../../../data/photo_events/manifest_train.csv"
-stats_path = "../../../data/photo_events/feature_stats_day100.npz"
-horizon = 100.0 # days
-ideal_class_distribution = [0.3,0.1,0.1,0.3,0.1]
-use_oversampling = true
 
 [model_inputs]
 [model_inputs.train.data]
