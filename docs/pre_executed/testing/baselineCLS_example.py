@@ -7,7 +7,7 @@ from hyrax.pytorch_ignite import (
         )
 
 # Path definitions
-toml_path = "./baselinecls_example_runtime_config.toml"
+toml_path = "./baselinecls_example_config.toml"
 
 
 h = Hyrax(config_file=toml_path)
