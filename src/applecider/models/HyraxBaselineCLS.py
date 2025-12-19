@@ -247,17 +247,13 @@ class MPTModel(nn.Module):
         pad  = torch.cat([pad.new_zeros((B,1)), pad], 1)
 
         # encode
-        import pdb;pdb.set_trace()
         z_full = self.encoder(h, src_key_padding_mask=pad)  # (B, L+1, d_model)
         h_masked = z_full[:, 1:, :]  # (B, L, d_model)
         f_hat = self.head_flux(h_masked)  # (B, L, 1)
         b_hat = self.head_band(h_masked)  # (B, L, 3)
         dt_hat = self.head_dt(h_masked)   # (B, L, 1)
 
-        #mf = masked_tok.view(-1)
-        # Why am I off by one index here? Suggests i'm including the CLS token somehow
-        mf = masked_tok[:, 1:].contiguous().view(-1)
-
+        mf = masked_tok.contiguous().view(-1)
         true_f = data[..., 2].view(-1)
         loss_f = F.mse_loss(f_hat.view(-1)[mf], true_f[mf])
         true_b = data[..., 4:7].argmax(-1).view(-1)
@@ -271,7 +267,6 @@ class MPTModel(nn.Module):
         lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
         lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
         loss = lambda_f * loss_f * lambda_b * loss_b * lambda_dt * loss_dt
-        #loss = 5.0 * loss_f + 3.0 * loss_b + 5.0 * loss_dt
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
