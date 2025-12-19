@@ -23,5 +23,5 @@ primary_id_field = "obj_id"
 [model_inputs.infer.data.dataset_config]
 use_oversampling = false
 
-[data_set.ImageAndMetadataDataset]
+[data_set."applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"]
 class_distribution = [0.3, 0.1, 0.1, 0.3, 0.1]
