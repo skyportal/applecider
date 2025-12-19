@@ -7,25 +7,25 @@ from hyrax.pytorch_ignite import (
         )
 
 # Path definitions
-pretrain_toml_path = "./baselinecls_pretrain_runtime_config.toml"
-toml_path = "./baselinecls_testing_runtime_config.toml"
+toml_path = "./baselinecls_example_config.toml"
 
 
 h = Hyrax(config_file=toml_path)
 dataset = h.prepare()
 
 # Perform Pre-Training
-perform_pretrain = False
+perform_pretrain = True # Can also be grabbed from config
 if perform_pretrain:
-    pretrain_weights_path = h.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]
+    pretrain_weights_path = h.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path_"]
+    h.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path_"] = False  # Temporarily disable during pre-training
     # Prepare empty state_dict for model
     model = setup_model(h.config, dataset["train"])
     initial_state_dict = model.state_dict()
+    h.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path_"] = pretrain_weights_path  # Restore path
 
     # Perform pre-training
     pretrainer = Hyrax(config_file=toml_path)
     pretrainer.set_config("model.name", "applecider.models.HyraxBaselineCLS.MPTModel")
-    #pretrainer = Hyrax(config_file=pretrain_toml_path)
     pretrain = pretrainer.train() # Train the pre-trainer
     # Save output weights to file
     weights = pretrain.state_dict()
@@ -40,12 +40,11 @@ if perform_pretrain:
 
 
 # Training
-#h.set_config("model", "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS")
 h.set_config("model.HyraxBaselineCLS.use_probabilities", False)
-h.set_config("data_set.PhotoEventsDataset.use_oversampling", True)
+h.set_config("data_set.'applecider.datasets.photo_dataset.PhotoEventsDataset'.use_oversampling", True)
 h.train()
 
 # Inference
 h.set_config("model.HyraxBaselineCLS.use_probabilities", True)
-h.set_config("data_set.PhotoEventsDataset.use_oversampling", False) # Disable oversampling for inference
+h.set_config("data_set.'applecider.datasets.photo_dataset.PhotoEventsDataset'.use_oversampling", False) # Disable oversampling for inference
 h.infer()

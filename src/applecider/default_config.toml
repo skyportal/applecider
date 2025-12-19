@@ -49,7 +49,7 @@ beta2 = 0.999
 eps = 5e-10
 
 
-[model.BaselineCLS]
+[model.HyraxBaselineCLS]
 num_classes = 5 # TODO: Find actual number
 pad_mask = 1 # TODO: Find actual number
 mode = "photo"
@@ -86,6 +86,18 @@ epochs = 150
 patience = 30
 # misc --------------------------------------------------------
 seed = 42
+
+# from runtime
+use_probabilities = false
+
+# Use a pretrained weights file, if path is specified
+pretrained_weights_path_ = "./pretrained_weights.pth"  # false | <path_to_weights_file>
+
+# pre-training values
+lambda_f = 5.0
+lambda_b = 3.0
+lambda_dt = 5.0
+mask_p = 0.30
 
 
 [model.SpectraNet]
@@ -140,3 +152,10 @@ image_norm = false  #? What should the default be here?
 patch_size = [32, 32]  #? Is it possible to consolidate this with cutout_size?
 
 tags = []
+
+[data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
+manifest_path = "../../../data/photo_events/manifest_train.csv"
+stats_path = "../../../data/photo_events/feature_stats_day100.npz"
+horizon = 100.0 # days
+ideal_class_distribution = [0.3,0.1,0.1,0.3,0.1]
+use_oversampling = true

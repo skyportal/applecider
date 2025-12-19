@@ -17,7 +17,7 @@ class HyraxBaselineCLS(nn.Module):
         self.config = config
         self.criterion = FocalLoss()
 
-        model_config = config["model"]["BaselineCLS"]
+        model_config = config["model"]["HyraxBaselineCLS"]
         #self.optimizer = torch.optim.AdamW(self.parameters(), lr=model_config["lr"], weight_decay=model_config["weight_decay"])
         # Use AdamW eventually
 
@@ -40,8 +40,8 @@ class HyraxBaselineCLS(nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
 
-        if self.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]:
-            pretrained_path = self.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path"]
+        if self.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path_"]:
+            pretrained_path = self.config["model"]["HyraxBaselineCLS"]["pretrained_weights_path_"]
             state_dict = torch.load(pretrained_path)
             self.load_state_dict(state_dict, strict=False)
             print(f"Loaded pretrained weights from {pretrained_path}")
@@ -194,7 +194,7 @@ class MPTModel(nn.Module):
         self.config = config
 
         # Pre-trains for BaselineCLS, use the same config parameters and architecture
-        model_config = config["model"]["BaselineCLS"]
+        model_config = config["model"]["HyraxBaselineCLS"]
 
         enc_layer = nn.TransformerEncoderLayer(
             model_config['d_model'], model_config['n_heads'], model_config['d_model'] * 4,
@@ -222,10 +222,10 @@ class MPTModel(nn.Module):
     def forward(self, z):
         return self.head_flux(z), self.head_band(z), self.head_dt(z)
 
-    # TODO: This entire train step is roughly sketched in
     def train_step(self, batch):
         data = batch[0]
-        pad = batch[2]
+        pad = batch[1]
+        #import pdb;pdb.set_trace()
         masked_tok = self._mask_batch(data, pad)
 
         B, L, _ = data.shape
@@ -237,13 +237,14 @@ class MPTModel(nn.Module):
 
         # compute the learned time embedding:
         te = self.time2vec(t)
-        te = F.dropout(te, p=self.config["model"]["BaselineCLS"]["dropout"])
+        te = F.dropout(te, p=self.config["model"]["HyraxBaselineCLS"]["dropout"])
 
         # add it:
         h_in = emb + te                              # (B, L, d_model)
         # prepend a learned CLS token:
         tok = self.cls_tok.expand(B, -1, -1)      # (B,1,d_model)
         h = torch.cat([tok, h_in], dim=1)        # (B, L+1, d_model)
+        pad  = torch.cat([pad.new_zeros((B,1)), pad], 1)
 
         # encode
         z_full = self.encoder(h, src_key_padding_mask=pad)  # (B, L+1, d_model)
@@ -252,10 +253,7 @@ class MPTModel(nn.Module):
         b_hat = self.head_band(h_masked)  # (B, L, 3)
         dt_hat = self.head_dt(h_masked)   # (B, L, 1)
 
-        #mf = masked_tok.view(-1)
-        # Why am I off by one index here? Suggests i'm including the CLS token somehow
-        mf = masked_tok[:, 1:].contiguous().view(-1)
-
+        mf = masked_tok.contiguous().view(-1)
         true_f = data[..., 2].view(-1)
         loss_f = F.mse_loss(f_hat.view(-1)[mf], true_f[mf])
         true_b = data[..., 4:7].argmax(-1).view(-1)
@@ -269,7 +267,6 @@ class MPTModel(nn.Module):
         lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
         lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
         loss = lambda_f * loss_f * lambda_b * loss_b * lambda_dt * loss_dt
-        #loss = 5.0 * loss_f + 3.0 * loss_b + 5.0 * loss_dt
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
@@ -325,15 +322,27 @@ class MPTModel(nn.Module):
         torch.Tensor
             A tensor of shape (L, 7), where L is the sequence length.
         """
-        # Assuming reading in a data dictionary from an alert npy file
-        photo_tensor, label_tensor = data_dict["data"]["photometry"], data_dict["data"]["label"]
-        # Use mean and std from data_dict to normalize continuous features
-        photo_tensor[..., :4] = (photo_tensor[..., :4] - data_dict["data"]["mean"]) / (data_dict["data"]["std"] + 1e-8)
+        # NOTE: Hyrax will copy this method into a standalone module during
+        # training so that it can be used for inference. However, Hyrax cannot
+        # copy imports at the top of the file. Since we depend on numpy in this
+        # method, we'll import it here to make sure it is present for inference.
+        import numpy as np
 
-        if "pad_mask" in data_dict["data"].keys():
-            mask_tensor = data_dict["data"]["pad_mask"]
-            return (photo_tensor, label_tensor, mask_tensor)
+        if "data" not in data_dict:
+            raise ValueError("Data dictionary must contain 'data' key.")
+
+        data = data_dict["data"]
+        photo_tensor = data["photometry"]
+        label_tensor = np.asarray(data.get("label", []), dtype=np.int64)
+
+        # Use mean and std from data_dict to normalize continuous features
+        photo_tensor[..., :4] = (photo_tensor[..., :4] - data["mean"]) / (data["std"] + 1e-8)
+
+        if "pad_mask" in data.keys():
+            mask_tensor = data["pad_mask"]
+            return (photo_tensor, mask_tensor, label_tensor)
 
         # Generate all-false padding mask if not provided, useful for infer step
-        false_mask = torch.zeros(photo_tensor.size(0), photo_tensor.size(1), dtype=torch.bool)
-        return (photo_tensor, label_tensor, false_mask)
+        # The +1 is to account for the CLS token added in the model.
+        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]+1), dtype=bool)
+        return (photo_tensor, false_mask, label_tensor)
