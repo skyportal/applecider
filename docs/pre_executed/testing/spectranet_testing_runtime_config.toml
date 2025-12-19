@@ -3,8 +3,6 @@ name = "applecider.models.spectranet.SpectraNet"
 
 [model_inputs]
 
-# Note - the sub-table (model_inputs.train.<sub-table>) can be named anything you like.
-
 [model_inputs.train.data]
 dataset_class = "applecider.datasets.spectra_dataset.SpectraData"
 fields = ["flux", "label", "redshift"]
