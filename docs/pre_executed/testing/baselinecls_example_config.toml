@@ -1,0 +1,42 @@
+[model]
+name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
+
+#[model.HyraxBaselineCLS]
+
+[data_loader]
+batch_size = 128
+collate_fn = "applecider.datasets.photo_dataset.collate"
+
+[model_inputs]
+[model_inputs.train.data]
+dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
+data_location = "../../../data/photo_events/train/"
+fields = ["photometry", "label", "mean", "std"]
+primary_id_field = "object_id"
+[model_inputs.train.data.dataset_config]
+manifest_path = "../../../data/photo_events/manifest_train.csv"
+
+[model_inputs.validate.data]
+#[model_inputs.dont_use.data]
+dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
+data_location = "../../../data/photo_events/val/"
+fields = ["photometry", "label", "mean", "std"]
+primary_id_field = "object_id"
+[model_inputs.validate.data.dataset_config]
+manifest_path = "../../../data/photo_events/manifest_val.csv"
+
+[model_inputs.infer.data]
+dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
+data_location = "../../../data/photo_events/test/"
+fields = ["photometry", "mean", "std"]
+primary_id_field = "object_id"
+[model_inputs.infer.data.dataset_config]
+manifest_path = "../../../data/photo_events/manifest_test.csv"
+use_oversampling = false
+
+[train]
+epochs = 3
+
+[optimizer]
+name = "torch.optim.Adam"
+lr = 0.0001

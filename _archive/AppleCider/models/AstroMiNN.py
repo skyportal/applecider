@@ -1,59 +1,33 @@
 import numpy as np
-import pandas as pd
 import os
-import shutil
 
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 
-from pathlib import Path
-from types import SimpleNamespace
-
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
-from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader, random_split, ConcatDataset, Subset
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
-from torchvision.ops import SqueezeExcitation
-
-from astropy.coordinates import SkyCoord
 
 from sklearn.metrics import precision_recall_curve, auc, confusion_matrix
-from sklearn.model_selection import StratifiedShuffleSplit
-
-import unittest
-import tempfile
-from collections import defaultdict
 
 import math
 import random
 import math
 
-import inspect
-
 import timm
-from timm.models import convnext
 
 from matplotlib.gridspec import GridSpec
 
-from astropy.coordinates import SkyCoord
-import astropy.units as u
-
-from einops import rearrange
-from torch.nn import MultiheadAttention
-
-from sklearn.metrics import precision_recall_curve, auc, roc_auc_score, roc_curve
+from sklearn.metrics import precision_recall_curve, auc
 
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 from sklearn.metrics import auc as sklearn_auc
 import random
 from datetime import datetime as t
-import argparse
 
 import copy
-import json
+
 
 
 CLASSES = [['SN Ia','SN Ic','SN Ib'],[ 'SN IIP', 'SN IIn','SN II', 'SN IIb'], ['Cataclysmic'], ['AGN'], ['Tidal Disruption Event']]

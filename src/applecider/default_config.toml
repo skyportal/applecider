@@ -1,0 +1,162 @@
+[model.AstroMiNN]
+
+num_classes = 9
+num_mlp_experts = 4
+
+use_probabilities = false
+
+towers_hidden_dims = 16
+towers_outdims = 32
+
+fusion_hidden_dims = 128
+fusion_router_dims = 128
+fusion_outdims = 32
+
+cnn_lr = 2
+cnn_decay = 5e-2
+psf_lr = 0.5
+psf_decay = 5e-2
+mag_lr = 2
+mag_decay = 0.0
+
+lc_lr = 2
+lc_decay = 0.05
+spatial_lr = 2
+spatial_decay = 0.0
+
+coord_lr = 0.5
+coord_decay = 0.0
+
+nst1_lr = 2
+nst1_decay = 0.0
+nst2_lr = 2
+nst2_decay = 0.0
+
+fusion_lr = 1
+fusion_decay = 1e-2
+fusion_beta1 = 0.9
+fusion_beta2 = 0.999
+
+router_decay = 0.0
+router_lr = 1.5
+router_beta1 = 0.9
+router_beta2 = 0.999
+router_lr_2 = 1
+router_beta1_2 = 0.95
+router_beta2_2 = 0.99
+
+beta1 = 0.9
+beta2 = 0.999
+eps = 5e-10
+
+
+[model.HyraxBaselineCLS]
+
+num_classes = 5
+pad_mask = 1
+mode = "photo"
+
+# model
+d_model = 128
+n_heads = 8 #4
+n_layers = 4 #2
+dropout = 0.40
+max_len = 257
+
+# optimiser
+lr = 5e-6
+weight_decay = 1e-2
+
+# loss & imbalance
+focal_gamma = 2.0
+
+# augmentation
+cut_time_p = false
+p_dropout = 0.1
+jitter_scale = 0.10
+flux_nu = 8
+
+# This are unused, but kept for reference
+epochs = 150
+patience = 30
+
+seed = 42
+
+# If true, use softmax, otherwise return logits
+use_probabilities = false
+
+# Use a pretrained weights file, if path is specified, otherwise false
+pretrained_weights_path_ = "./pretrained_weights.pth"
+
+# pre-training values
+lambda_f = 5.0
+lambda_b = 3.0
+lambda_dt = 5.0
+mask_p = 0.30
+
+
+[model.SpectraNet]
+
+# whether the model will provide a redshift estimate (true)
+# or a classification based on `class_order` (false)
+redshift = false
+
+# These model configs must all be same length
+use_ln_stages = [true, true, true, true, true]
+depths = [1, 1, 1, 1, 1]
+channels = [64, 128, 256, 512, 1024]
+kernel_sizes_per_stage = [
+    [3, 61, 1021],
+    [3, 31, 251],
+    [3, 15, 61],
+    [3, 11, 31],
+    [3, 7, 13]
+]
+
+# number of potential classes if redshift is false
+class_order = 9
+
+flat_dim = 3072
+
+
+[data_set."applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"]
+
+# Defines the maximum number of alerts per sample to work with. Use <= 0 for all available alerts.
+alert = 0
+
+all_samples = false
+
+augment = true
+
+classes = ['SN I', 'SN II', 'Cataclysmic', 'AGN', 'Tidal Disruption Event']
+
+# Whether to over sample the minority classes during training
+use_oversampling = false
+# The preferred percentage distribution of classes when oversampling. Length
+# must match number of classes.
+class_distribution = [0.3, 0.1, 0.1, 0.3, 0.1]
+
+cutout_size = 63
+
+# If enabled, images will be cached in memory after first load to speed up subsequent epochs
+# This may lead to high memory usage depending, and out of memory errors on large datasets
+enable_image_cache = false
+
+image_norm = false
+
+patch_size = [32, 32]
+
+tags = []
+
+
+[data_set."applecider.datasets.photo_dataset.PhotoEventsDataset"]
+
+manifest_path = "../../../data/photo_events/manifest_train.csv"
+
+stats_path = "../../../data/photo_events/feature_stats_day100.npz"
+
+horizon = 100.0 # days
+
+ideal_class_distribution = [0.3,0.1,0.1,0.3,0.1]
+
+use_oversampling = true
