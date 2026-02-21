@@ -42,6 +42,26 @@ applecider/
 
 ## Developer quickstart
 
+Create and activate a conda environment:
+
+```bash
+conda create --name applecider python=3.12
+conda activate applecider
+```
+
+Clone and enter the repository:
+
+```bash
+git clone https://github.com/skyportal/applecider.git
+cd applecider
+```
+
+Install optional compiled dependencies used by parts of the preprocessing stack:
+
+```bash
+conda install -c conda-forge llvmlite numba
+```
+
 Install in editable mode with development dependencies:
 
 ```bash
