@@ -1,18 +1,17 @@
-from torch.utils.data import Dataset
-from hyrax.data_sets import HyraxDataset
 from pathlib import Path
 from typing import Union
+
 import numpy as np
-from torch.nn.utils.rnn import pad_sequence
-from applecider.datasets.oversampler_mixin import OversamplerMixin
-import torch
 import pandas as pd
+from applecider.datasets.oversampler_mixin import OversamplerMixin
+from hyrax.data_sets import HyraxDataset
+from torch.utils.data import Dataset
 
 
 class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
     def __init__(self, config: dict, data_location: Union[Path, str] = None, horizon: float = 10.0):
         self.data_location = data_location
-        self.filenames = sorted(list(Path(self.data_location).glob('*.npz')))
+        self.filenames = sorted(list(Path(self.data_location).glob("*.npz")))
 
         self.photo_config = config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]
 
@@ -24,21 +23,21 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         self.use_oversampling = self.photo_config["use_oversampling"]
 
         # Map original subclass IDs to broader classes
-        self.taxonomy_mapper = {0: 0,  # SN Ia -> SNI
-                                1: 0,  # SN Ib -> SNI
-                                2: 0,  # SN Ic -> SNI
-                                3: 1,  # SN II -> SNII
-                                4: 1,  # SN IIP -> SNII
-                                5: 1,  # SN IIn -> SNII
-                                6: 1,  # SN IIb -> SNII
-                                7: 2,  # Cataclysmic -> CV
-                                8: 3,  # AGN -> AGN
-                                9: 4,  # Tidal Disruption Event -> TDE
-                                }
+        self.taxonomy_mapper = {
+            0: 0,  # SN Ia -> SNI
+            1: 0,  # SN Ib -> SNI
+            2: 0,  # SN Ic -> SNI
+            3: 1,  # SN II -> SNII
+            4: 1,  # SN IIP -> SNII
+            5: 1,  # SN IIn -> SNII
+            6: 1,  # SN IIb -> SNII
+            7: 2,  # Cataclysmic -> CV
+            8: 3,  # AGN -> AGN
+            9: 4,  # Tidal Disruption Event -> TDE
+        }
 
         ideal_class_distribution = self.photo_config["ideal_class_distribution"]
-        class_at_index = [self.taxonomy_mapper[label] for label in
-                          self.manifest_df.label.tolist()]
+        class_at_index = [self.taxonomy_mapper[label] for label in self.manifest_df.label.tolist()]
         if self.use_oversampling:
             self.prepare_over_sampling(ideal_class_distribution, class_at_index)
         super().__init__(config)
@@ -67,25 +66,24 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         # Find the row in the manifest
         row = self.manifest_df.iloc[idx]
         return self.taxonomy_mapper[row.label]
-        #return self.id2broad_id[int(row.label)]
+        # return self.id2broad_id[int(row.label)]
 
     def get_photometry(self, idx):
         """get photometry tensor for a specific index"""
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
-        #print(self.manifest_df.iloc[idx]["obj_id"], self.filenames[idx], self.manifest_df.iloc[idx].label)
-        #import pdb; pdb.set_trace()
+        # print(self.manifest_df.iloc[idx]["obj_id"], self.filenames[idx], self.manifest_df.iloc[idx].label)
+        # import pdb; pdb.set_trace()
         data = np.load(self.filenames[idx], allow_pickle=True)["data"]
         # TODO: Consider caching data to avoid duplicate loads in each epoch
 
         # Limit length to <100 for memory constraints
-        #data = data[:100]
+        # data = data[:100]
 
         # TODO: data augmentation
 
         # Horizon cut: only keep data up to a certain (relative) time
-        data = data[data[:,0] <= self.horizon]
-
+        data = data[data[:, 0] <= self.horizon]
 
         # Grab features from array slices
         dt = np.log1p(data[:, 0])
@@ -104,11 +102,11 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
 
     def get_mean(self, idx):
         """get feature means from stats file"""
-        return self.st['mean']
+        return self.st["mean"]
 
     def get_std(self, idx):
         """get feature standard deviations from stats file"""
-        return self.st['std']
+        return self.st["std"]
 
     def __len__(self):
         if self.use_oversampling:
@@ -118,7 +116,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
 
     @staticmethod
     def collate(batch):
-        '''custom collate function for photo events dataset'''
+        """custom collate function for photo events dataset"""
         seqs = []
         labels = []
         for i in batch:
@@ -133,9 +131,11 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         padded = []
         for s in seqs:
             pad_width = ((0, max_len - s.shape[0]), (0, 0))
-            padded.append(np.pad(s, pad_width, mode='constant', constant_values=0.0))
+            padded.append(np.pad(s, pad_width, mode="constant", constant_values=0.0))
         pad = np.stack(padded, axis=0)
-        pad_mask = np.stack([np.concatenate([np.zeros(l), np.ones(pad.shape[1]-l)]) for l in lengths]).astype(bool)
+        pad_mask = np.stack(
+            [np.concatenate([np.zeros(l), np.ones(pad.shape[1] - l)]) for l in lengths]
+        ).astype(bool)
 
         # Truncate to a consistent sequence length
         pad = pad[:, :257, :]
