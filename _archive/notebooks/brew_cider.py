@@ -38,7 +38,7 @@ import torch.optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ExponentialLR, ReduceLROnPlateau, LinearLR
-import torch.nn.functional as F 
+import torch.nn.functional as F
 from torchvision import transforms
 
 from AppleCiDEr_Skyportal.AppleCider.core.dataset import CiderDataset
@@ -63,10 +63,10 @@ config = {
         'group_labels': True,
         'num_classes': 5,
         "gpu":1,
-        
+
         ## Data General
         'preprocessed_path': '/work/nvme/bcrv/abrown3/preprocessed_data/data_multi/day10',
-        # for ALERTS 
+        # for ALERTS
         'train_csv_path':'/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Train_vetted_7-6.csv',
         'val_csv_path':'/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Val_vetted_7-6.csv',
         'test_csv_path':'/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Test_vetted_7-6.csv',
@@ -74,11 +74,11 @@ config = {
         'spec_dir': '/work/nvme/bcrv/mxu11',
         #'class_weights': False,
         #'generate_train_val_files': False,
-        
-        ## personal tag for weights files in local folder 
+
+        ## personal tag for weights files in local folder
         'custom_weight_path': False,
         'custom_weight_name': '-',
-        
+
         ## only for the wandb users.....
         'use_notes_tags': True,
         'wandb_tags': ['Delta!', 'hidden dim', 'group labels'],
@@ -86,7 +86,7 @@ config = {
 
         ## Photometry Model 🍏🍏
         'photo_event_path': '/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events',
-        
+
         'output_dir':'/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events',
         'stats_file':'/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/feature_stats_day100.npz',
         'horizon_days' :  10.0, # <- fine-tuning on 50 days
@@ -105,16 +105,16 @@ config = {
         #'cut_time_p':None, #(.25,.25,.25,.25), #None,  # or (.25,.25,.25,.25)
         #'p_dropout':0.1,
         #'jitter_scale':0.10,
-        #'flux_nu':8,    
+        #'flux_nu':8,
         # training schedule
         #'epochs' :150,
         #'patience' :30,
-        # misc 
+        # misc
         #'seed':42,
         #'NUM_CLASSES':5,
 
         ## Spectra Model 🍏🍏🍏🍏🍏
-    
+
         #"learning_rate",
         #"weight_decay": 1e-5,
         #"ema_decay": 0.995,
@@ -132,43 +132,43 @@ config = {
         #"patience": 14,
         "train_dir": '/work/nvme/bcrv/mxu11',  "val_dir": '/work/nvme/bcrv/mxu11', "test_dir":'/work/nvme/bcrv/mxu11',
 
-        
+
 
          ## Metadata & Image Model 🍏🍏
         "num_experts":4,
         "towers_hidden_dims":16,
         "towers_outdims":4,
         "embedding":"False",
-        
+
         "fusion_hidden_dims":128,
         "fusion_router_dims":128,
         "fusion_outdims":4,
-        
+
         "cnn_lr":2,
         "cnn_decay":5e-2,
         "psf_lr":0.5,
         "psf_decay":5e-2,
         "mag_lr": 2,
         "mag_decay": 0.0,
-        
+
         "lc_lr": 2,
         "lc_decay": 0.05,
         "spatial_lr":2,
         "spatial_decay":0.0,
-        
+
         "coord_lr": 0.5,
         "coord_decay": 0.0,
-        
+
         "nst1_lr":2,
         "nst1_decay":0.0,
         "nst2_lr":2,
         "nst2_decay":0.0,
-        
+
         "fusion_lr":1,
         "fusion_decay":1e-2,
         "fusion_beta1": 0.9,
         "fusion_beta2": 0.999,
-        
+
         "router_decay":0.0,
         "router_lr":1.5,
         "router_beta1":0.9,
@@ -176,29 +176,29 @@ config = {
         "router_lr_2":1,
         "router_beta1_2":0.95,
         "router_beta2_2":0.99,
-        
+
         "classifier_decay": 0.0,
         "classifier_lr":2.44,
         "classifier_beta1":0.95,
         "classifier_beta2":0.99,
-        
+
         "beta1":0.9,
         "beta2":0.999,
         "eps":5e-10,
-        
+
         "sched_pat":5,
         "sched_factor":0.4,
-        
+
         "min_lr":6e-10,
-        
+
         "weight_exp":1,
         "gamma":2.5,
-        
+
         "criterion": "cross_entropy",
-        "scheduler": "cosine_annealing", 
+        "scheduler": "cosine_annealing",
         "t_max": 6,
         "max_norm":5,
-    
+
         ## MultiModal Model 🍏🍏
         'hidden_dim': 64,
         'fusion': 'avg',  # 'avg', 'concat'
@@ -229,17 +229,17 @@ def get_config(trial):
         'save_weights': True,
         'weights_path': f'/projects/bcrv/abrown3/AppleCiDEr_Skyportal/cider_weights/multi-{datetime.now().strftime("%Y-%m-%d-%H-%M")}',
         'use_pretrain': None,
-        'freeze': False,        
-        
+        'freeze': False,
+
         'step': 'type',
         'classes': ['SN I','SN II', 'Cataclysmic', 'AGN', 'Tidal Disruption Event'],
         'group_labels': True,
         'num_classes': 5,
         #'max_samples': 5500,
-        
+
         ## Data General
         'preprocessed_path': '/work/nvme/bcrv/abrown3/preprocessed_data/data_multi/day10',
-        # for ALERTS 
+        # for ALERTS
         'train_csv_path':'/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Train_vetted_7-6.csv',
         'val_csv_path':'/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Val_vetted_7-6.csv',
         'test_csv_path':'/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Test_vetted_7-6.csv',
@@ -247,11 +247,11 @@ def get_config(trial):
         'spec_dir': '/work/nvme/bcrv/mxu11',
         #'class_weights': False,
         #'generate_train_val_files': False,
-        
-        ## personal tag for weights files in local folder 
+
+        ## personal tag for weights files in local folder
         'custom_weight_path': False,
         'custom_weight_name': '-',
-        
+
         ## only for the wandb users.....
         'use_notes_tags': True,
         'wandb_tags': ['Delta!', 'hidden dims version', 'group labels'],
@@ -259,7 +259,7 @@ def get_config(trial):
 
         ## Photometry Model 🍏🍏
         'photo_event_path': '/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events',
-        
+
         'output_dir':'/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events',
         'stats_file':'/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/feature_stats_day100.npz',
         'horizon_days' :  10.0, # <- fine-tuning on 50 days
@@ -278,11 +278,11 @@ def get_config(trial):
         #'cut_time_p':None, #(.25,.25,.25,.25), #None,  # or (.25,.25,.25,.25)
         #'p_dropout':0.1,
         #'jitter_scale':0.10,
-        #'flux_nu':8,    
+        #'flux_nu':8,
         # training schedule
         #'epochs' :150,
         #'patience' :30,
-        # misc 
+        # misc
         #'seed':42,
         #'NUM_CLASSES':5,
 
@@ -302,8 +302,8 @@ def get_config(trial):
         #"epochs": 100,
         #"optimizer": "AdamW",
         #"patience": 14,
-        "train_dir": '/work/nvme/bcrv/mxu11',  "val_dir": '/work/nvme/bcrv/mxu11', "test_dir":'/work/nvme/bcrv/mxu11',  
-        
+        "train_dir": '/work/nvme/bcrv/mxu11',  "val_dir": '/work/nvme/bcrv/mxu11', "test_dir":'/work/nvme/bcrv/mxu11',
+
         #'s_dropout': 0.2,
         #'s_conv_channels': [1, 64, 64, 32, 32],
         #'s_kernel_size': 3,
@@ -314,36 +314,36 @@ def get_config(trial):
         "towers_hidden_dims":16,
         "towers_outdims":4,
         "embedding":"False",
-        
+
         "fusion_hidden_dims":128,
         "fusion_router_dims":128,
         "fusion_outdims":4,
-        
+
         "cnn_lr":2,
         "cnn_decay":5e-2,
         "psf_lr":0.5,
         "psf_decay":5e-2,
         "mag_lr": 2,
         "mag_decay": 0.0,
-        
+
         "lc_lr": 2,
         "lc_decay": 0.05,
         "spatial_lr":2,
         "spatial_decay":0.0,
-        
+
         "coord_lr": 0.5,
         "coord_decay": 0.0,
-        
+
         "nst1_lr":2,
         "nst1_decay":0.0,
         "nst2_lr":2,
         "nst2_decay":0.0,
-        
+
         "fusion_lr":1,
         "fusion_decay":1e-2,
         "fusion_beta1": 0.9,
         "fusion_beta2": 0.999,
-        
+
         "router_decay":0.0,
         "router_lr":1.5,
         "router_beta1":0.9,
@@ -351,29 +351,29 @@ def get_config(trial):
         "router_lr_2":1,
         "router_beta1_2":0.95,
         "router_beta2_2":0.99,
-        
+
         "classifier_decay": 0.0,
         "classifier_lr":2.44,
         "classifier_beta1":0.95,
         "classifier_beta2":0.99,
-        
+
         "beta1":0.9,
         "beta2":0.999,
         "eps":5e-10,
-        
+
         "sched_pat":5,
         "sched_factor":0.4,
-        
+
         "min_lr":6e-10,
-        
+
         "weight_exp":1,
         "gamma":2.5,
-        
+
         "criterion": "cross_entropy",
-        "scheduler": "cosine_annealing", 
+        "scheduler": "cosine_annealing",
         "t_max": 6,
         "max_norm":5,
-    
+
         ## MultiModal Model 🍏🍏
         'hidden_dim': 64,
         'fusion': 'avg',  # 'avg', 'concat'
@@ -406,15 +406,15 @@ def get_config(trial):
     elif STUDY_NAME.startswith('image'):
         config['mode'] = 'image'
         config['epochs'] = 50
-        
+
     elif STUDY_NAME.startswith('ztf'):
         config['mode'] = 'ztf'
         config['epochs'] = 50
-        
+
     elif STUDY_NAME.startswith('all'):
         config['mode'] = 'all'
         config['epochs'] = 50
-    
+
     else:
         raise NotImplementedError(f"Unknown study name {STUDY_NAME}")
 
@@ -439,7 +439,7 @@ class XastroMiNN(nn.Module):
     """
     Image and Metadata transient classifier
     """
-    
+
     def __init__(self, num_classes=5, num_mlp_experts=4, towers_hidden_dims = 16,
                  towers_outdims = 32,
                  fusion_hidden_dims = 128,
@@ -447,9 +447,9 @@ class XastroMiNN(nn.Module):
                  fusion_outdims = 32, config=None
                  ):
         super().__init__()
-        
+
         #self.classification = True if config['mode'] == 'metdata & images' else False
-        
+
         self.has_image = True  # Flag for image availability
         self.num_classes = num_classes
         self.towers_hidden_dims = towers_hidden_dims
@@ -460,14 +460,14 @@ class XastroMiNN(nn.Module):
         self.fusion_outdims = fusion_outdims
 
 
-        # ===== Metadata Processing Towers ===== 
+        # ===== Metadata Processing Towers =====
         # Each tower processes specific metadata features
-        # PSF quality features tower 
+        # PSF quality features tower
         self.psf_tower = ResidualTowerBlock(2, self.towers_hidden_dims, towers_outdims)
-    
-        # Magnitude features tower 
+
+        # Magnitude features tower
         self.mag_tower = ResidualTowerBlock(7, self.towers_hidden_dims*2, towers_outdims)
-        
+
         # LC features tower
         self.lc_tower = ResidualTowerBlock(12, self.towers_hidden_dims*3, towers_outdims)
 
@@ -492,22 +492,22 @@ class XastroMiNN(nn.Module):
         #     img_size=49,
         #     in_chans=4
         # )
-        
+
         self.image_tower = SplitHeadConvNeXt(
                     pretrained=False,       # or False if training from scratch
                     in_chans=4,             # Critical: override default 3-channel input
                     outdims=towers_outdims  # Your task's number of classes
                 ).to(device)
 
-        fusion_dims = 6*towers_outdims + 3*fusion_outdims 
-        # ===== Modality Fusion MoE ===== 
+        fusion_dims = 6*towers_outdims + 3*fusion_outdims
+        # ===== Modality Fusion MoE =====
         # Combines features from all towers (4 metadata + image)
         self.fusion_experts = nn.ModuleList([
             ResidualTowerBlock(fusion_dims, fusion_hidden_dims, 5)
             for _ in range(num_mlp_experts)
         ])
 
-        num_experts=num_mlp_experts 
+        num_experts=num_mlp_experts
         self.fusion_router = nn.Sequential(
             nn.Linear( fusion_dims, fusion_dims//2),
             nn.Tanh(),
@@ -545,14 +545,14 @@ class XastroMiNN(nn.Module):
         # Process all metadata features through respective towers
         psf_feats = self.psf_tower(metadata[:, [5,14]])  # PSF features
         lc_feats = self.lc_tower(metadata[:, [6, 9, 10, 13, 15, 17, 18, 19, 20, 21, 22, 23]])
-        mag_feats = self.mag_tower(metadata[:, [6, 9, 10, 13, 15, 17, 18]]) 
+        mag_feats = self.mag_tower(metadata[:, [6, 9, 10, 13, 15, 17, 18]])
 
         spatial_feats = self.spatial_tower(metadata[:, [2,3,4]])  # Spatial features
         nsta = self.nst1_tower(metadata[:, [0,2]])  # Nearest source A features
         nstb = self.nst2_tower(metadata[:, [1,3]])  # Nearest source B features
         coord_feats = self.coord_tower(metadata[:, [7,8]])
         megatower = self.mega_tower(metadata[:, [0,1,2,3,4,5,6,7,8,9,10,11,12, 13, 14,15, 16, 17, 18]])
-        
+
         # Process image if available (zeros otherwise)
         image_feats = self.image_tower(image) if image is not None else torch.zeros_like(nsta)
 
@@ -570,7 +570,7 @@ class XastroMiNN(nn.Module):
         for expert_idx, expert in enumerate(self.fusion_experts):
             # Mask for samples where this expert is in top-k
             expert_mask = (topk_indices == expert_idx).any(dim=-1)  # [B]   # 'ResidualTowerBlock'
-            
+
             if expert_mask.any():
                 # Get weights for this expert [M] where M=sum(expert_mask)
                 weights = topk_weights[expert_mask, (topk_indices[expert_mask] == expert_idx).nonzero()[:, 1]]
@@ -581,7 +581,7 @@ class XastroMiNN(nn.Module):
 
         return moe_output
 
-    
+
 def build_spec_model(config):
     class SpectraNetBlock(nn.Module):
         def __init__(self, in_channels, out_channels, kernel_sizes,
@@ -592,7 +592,7 @@ def build_spec_model(config):
             self.use_ln = use_ln
             self.kernel_sizes = kernel_sizes
             self.k = len(kernel_sizes)
-            
+
 
             self.convs = nn.ModuleList([
                 nn.Conv1d(in_channels, out_channels, kernel_size=k, padding=k // 2)
@@ -638,11 +638,11 @@ def build_spec_model(config):
         def __init__(self, depths=[1, 1, 1, 1, 1]):
             super().__init__()
             self.kernel_sizes_per_stage = [
-                [3, 61, 1021 ],  
-                [3, 31, 251],            
-                [3, 15,	61],                  
-                [3,11, 31],                         
-                [3,7,13]                      
+                [3, 61, 1021 ],
+                [3, 31, 251],
+                [3, 15,	61],
+                [3,11, 31],
+                [3,7,13]
             ]
             assert len(depths) == len(self.kernel_sizes_per_stage)
             self.classification = True if config['mode'] == 'spectra' else False
@@ -677,15 +677,15 @@ def build_spec_model(config):
             for _ in range(4): length //= 4
             self.flat_dim = channels[5] * self.ks[-1] * length
 
-            
+
             self.class_model = nn.Sequential(
                 nn.Linear(self.flat_dim, 2048),
                 nn.LayerNorm(2048), nn.GELU(), nn.Dropout(0.5),
                 nn.Linear(2048, 256),
-                nn.LayerNorm(256), nn.GELU(), nn.Dropout(0.3)) #, 
+                nn.LayerNorm(256), nn.GELU(), nn.Dropout(0.3)) #,
             #    nn.Linear(256, len(config['classes']))
             #)
-            
+
             if self.classification:
                 self.fc = nn.Linear(256, len(config['classes']))
 
@@ -696,15 +696,15 @@ def build_spec_model(config):
             x = self.stage4(x)
             x = self.stage5(x)
             z = x.reshape(x.size(0), -1)
-            
+
             output = self.class_model(z)
-            
+
             if self.classification:
                 output = self.fc(output)
-          
+
             return output
-    
-    
+
+
     return SpectraClassification()
 
 
@@ -748,17 +748,17 @@ class BaselineCLS(nn.Module):
         super().__init__()
         self.in_proj  = nn.Linear(7, d_model)
         self.cls_tok  = nn.Parameter(torch.zeros(1,1,d_model))
-        
+
         # replace SinCos PE with Time2Vec on the dt channel
-        
-        self.time2vec = Time2Vec(d_model).to(torch.device("cuda")) # # changed from original, req to work 
+
+        self.time2vec = Time2Vec(d_model).to(torch.device("cuda")) # # changed from original, req to work
         enc_layer      = nn.TransformerEncoderLayer(
                             d_model, n_heads, d_model*4,
                             dropout, batch_first=True)
         self.encoder  = nn.TransformerEncoder(enc_layer, n_layers)
         self.norm     = nn.LayerNorm(d_model)
         self.head     = nn.Linear(d_model, num_classes)
-        
+
         self.classification = True if mode == 'photo' else False
         if self.classification:
             self.fc = nn.Linear(d_model, num_classes)
@@ -785,31 +785,31 @@ class BaselineCLS(nn.Module):
         # prepend a learned CLS token:
         tok = self.cls_tok.expand(B,-1,-1)      # (B,1,d_model)
         h   = torch.cat([tok, h], dim=1)        # (B, L+1, d_model)
-        
+
         # adjust padding mask to account for CLS at idx=0
         pad = torch.cat(
             [torch.zeros(B,1, device=torch.device("cuda"), dtype=torch.bool),
              pad_mask], dim=1
-        ) # changed from original, req to work 
+        ) # changed from original, req to work
 
         # encode
         z = self.encoder(h, src_key_padding_mask=pad)  # (B, L+1, d_model)
-        
+
         output = self.norm(z[:,0]) # (B, d_model )
-        
+
         if self.classification:
             # classification from the CLS token
-            output = self.fc(output) # (B, num_classes)     
-            
+            output = self.fc(output) # (B, num_classes)
+
         return output
-                
-        
+
+
 class AppleCider(nn.Module):
-    
+
     """
     AppleCider
     """
-    
+
     def __init__(self, config):
         super(AppleCider, self).__init__()
 
@@ -825,27 +825,27 @@ class AppleCider(nn.Module):
         self.photometry_proj = nn.Linear(config['p_d_model'], config['hidden_dim'])  # 5)
         self.spectra_proj = nn.Linear(256, config['hidden_dim']) #5)
         self.img_metadata_proj = nn.Linear(5, config['hidden_dim']) #5)
-        
+
         if self.classification:
             self.fusion = config['fusion']
             in_features = config['hidden_dim'] * 3 if self.fusion == 'concat' else config['hidden_dim']
             self.fc = nn.Linear(in_features, config['num_classes'])
-        
+
     def get_embeddings(self, photometry, photometry_mask, metadata, images, spectra):
         p_emb = self.photometry_proj(self.photometry_encoder(photometry, photometry_mask))
         s_emb = self.spectra_proj(self.spectra_encoder(spectra))
         im_emb = self.img_metadata_proj(self.img_metadata_encoder(metadata, images))
-        
+
         ## normalize features
         p_emb = p_emb / p_emb.norm(dim=-1, keepdim=True)
         im_emb = im_emb / im_emb.norm(dim=-1, keepdim=True)
         s_emb = s_emb / s_emb.norm(dim=-1, keepdim=True)
-        
+
         return p_emb, im_emb, s_emb
 
     def forward(self, photometry, photometry_mask, metadata, images, spectra):
         p_emb, im_emb, s_emb = self.get_embeddings(photometry, photometry_mask, metadata, images, spectra)
-        
+
         if self.classification:
 
             if self.fusion == 'concat':
@@ -854,7 +854,7 @@ class AppleCider(nn.Module):
                 emb = (p_emb + im_emb +  s_emb) / 3
             else:
                 raise NotImplementedError
-            
+
             logits = self.fc(emb)
 
             return logits
@@ -862,8 +862,8 @@ class AppleCider(nn.Module):
             raise NotImplementedError
 
 
-            
-            
+
+
 model = AppleCider(config)
 model.to(device)
 
@@ -886,10 +886,10 @@ class EarlyStopping:
                 self.counter += 1
         return self.counter >= self.patience
 
-    
+
 class Trainer:
     def __init__(self, model, optimizer, scheduler, warmup_scheduler, criterion, criterion_val, device, config, trial=None):
-        
+
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
@@ -907,14 +907,14 @@ class Trainer:
         self.warmup_epochs = config['warmup_epochs']
 
         self.total_loss = [] ; self.total_correct_predictions = 0 ; self.total_predictions = 0
-        
+
         self.custom_weight_path = config['custom_weight_path'] #; self.custom_weight_name = config['custom_weight_name']
-        
+
         if self.use_wandb:
             self.run_id = config['run_id']
-  
+
     def store_weights(self, epoch):
-        
+
         if self.use_wandb:
             torch.save(self.model.state_dict(), os.path.join(self.weights_path, f'weights-{datetime.now().strftime("%Y-%m-%d-%H-%M")}-{epoch}-{self.run_id}.pth'))
             torch.save(self.model.state_dict(), os.path.join(self.weights_path, f'weights-{datetime.now().strftime("%Y-%m-%d-%H-%M")}-best-{self.run_id}.pth'))
@@ -944,7 +944,7 @@ class Trainer:
         return sum(self.total_loss) / len(self.total_loss), self.total_correct_predictions / self.total_predictions
 
     def get_logits(self, photometry, photometry_mask, metadata, images, spectra):
-        
+
         if self.mode == 'photo':
             logits = self.model(photometry, photometry_mask)
         else:  # all 4 modalities
@@ -955,20 +955,20 @@ class Trainer:
 
     def step(self, photometry, photometry_mask, metadata, images, spectra, labels):
         """Perform a training step for the classification model"""
-        logits = self.get_logits(photometry, photometry_mask, metadata, images, spectra)    
-        
+        logits = self.get_logits(photometry, photometry_mask, metadata, images, spectra)
+
         loss = self.criterion(logits, labels)
 
         self.update_stats(loss, logits, labels)
 
         return loss
-    
+
     def step_val(self, photometry, photometry_mask, metadata, images, spectra, labels):
         """Perform a training step for the classification model"""
-        logits = self.get_logits(photometry, photometry_mask, metadata, images, spectra)    
-        
+        logits = self.get_logits(photometry, photometry_mask, metadata, images, spectra)
+
         loss = self.criterion_val(logits, labels)
-        
+
         self.update_stats(loss, logits, labels)
 
         return loss
@@ -986,16 +986,16 @@ class Trainer:
     def train_epoch(self, train_dataloader):
         self.model.train()
         self.zero_stats()
-        
+
         for photometry, photometry_mask, metadata, images, spectra, labels in tqdm(train_dataloader, total=len(train_dataloader), desc='Train', colour='#9ACD32',leave=True):
             photometry, photometry_mask = photometry.to(self.device), photometry_mask.to(self.device)
             metadata, images = metadata.to(self.device), images.to(self.device)
             spectra = spectra.to(self.device)
-            labels = labels.to(self.device)    
-            
+            labels = labels.to(self.device)
+
             self.optimizer.zero_grad()
 
-            
+
             loss = self.step(photometry, photometry_mask, metadata, images, spectra, labels)
 
             if self.use_wandb:
@@ -1012,7 +1012,7 @@ class Trainer:
         loss, acc = self.calculate_stats()
 
         return loss, acc
-   
+
 
     def val_epoch(self, val_dataloader):
         self.model.eval()
@@ -1021,7 +1021,7 @@ class Trainer:
         with torch.no_grad():
             for photometry, photometry_mask, metadata, images, spectra, labels in tqdm(val_dataloader, total=len(val_dataloader), desc='Validation', colour='#9ACD32', leave=True):
                 photometry, photometry_mask = photometry.to(self.device), photometry_mask.to(self.device)
-                
+
                 metadata, images = metadata.to(self.device), images.to(self.device)
                 spectra = spectra.to(self.device)
                 labels = labels.to(self.device)
@@ -1031,7 +1031,7 @@ class Trainer:
         loss, acc = self.calculate_stats()
 
         return loss, acc
-    
+
 
     def train(self, train_dataloader, val_dataloader, epochs):
         best_val_loss = np.inf
@@ -1085,7 +1085,7 @@ class Trainer:
 
         all_true_labels = []
         all_predicted_labels = []
-        
+
         for photometry, photometry_mask, metadata, images, spectra, labels in tqdm(val_dataloader, total=len(val_dataloader), desc='validation', colour='#9ACD32',leave=True):
             with torch.no_grad():
                 photometry, photometry_mask = photometry.to(self.device), photometry_mask.to(self.device)
@@ -1098,7 +1098,7 @@ class Trainer:
                 _, predicted_labels = torch.max(probabilities, dim=1)
 
                 #all_true_labels.extend(labels.numpy())
-                all_true_labels.extend(labels.cpu().numpy()) 
+                all_true_labels.extend(labels.cpu().numpy())
                 all_predicted_labels.extend(predicted_labels.cpu().numpy())
                 # all_predicted_labels.extend(predicted_labels.cpu().numpy())
 
@@ -1107,7 +1107,7 @@ class Trainer:
 
         labels = [id2target[i] for i in range(len(conf_matrix))]
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 7))
-        
+
         ## Plot absolute values confusion matrix
         sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='BuPu', xticklabels=labels, yticklabels=labels, ax=axes[0])
         axes[0].set_xlabel('Predicted')
@@ -1128,41 +1128,41 @@ class Trainer:
             artifact_matrix = wandb.Artifact("confusion-matrix", type="table")
             artifact_matrix.add(matrix_table, "absolute-confusion-matrix")
             wandb.log_artifact(artifact_matrix)
-         
+
         return conf_matrix
-    
+
     def evaluate_alert(self, alert_dataloader, id2target):
         self.model.eval()
-    
+
         all_true_labels = []
         all_predicted_labels = []
-        
-        
+
+
         for photometry, photometry_mask, metadata, images, spectra, labels in tqdm(alert_dataloader, total=len(alert_dataloader), desc='alert evaluation', colour='#9ACD32',leave=True):
             with torch.no_grad():
-                
+
                 photometry, photometry_mask = photometry.to(self.device), photometry_mask.to(self.device)
                 metadata, images = metadata.to(self.device), images.to(self.device)
                 spectra = spectra.to(self.device)
 
                 logits = self.get_logits(photometry, photometry_mask, metadata, images, spectra)
-                
+
                 probabilities = torch.nn.functional.softmax(logits, dim=1)
                 _, predicted_labels = torch.max(probabilities, dim=1)
-                
-                all_true_labels.extend(labels.cpu().numpy()) 
+
+                all_true_labels.extend(labels.cpu().numpy())
                 all_predicted_labels.extend(predicted_labels.cpu().numpy())
 
-                
+
         #print("all_predicted_label",all_predicted_label)
         #print("all_predicted_label",all_predicted_label)
-        
+
         conf_matrix = confusion_matrix(all_true_labels, all_predicted_labels)
         conf_matrix_percent = 100 * conf_matrix / conf_matrix.sum(axis=1)[:, np.newaxis]
 
         labels = [id2target[i] for i in range(len(conf_matrix))]
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 7))
-        
+
         ## Plot absolute values confusion matrix
         sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='BuPu', xticklabels=labels, yticklabels=labels, ax=axes[0])
         axes[0].set_xlabel('Predicted')
@@ -1174,28 +1174,28 @@ class Trainer:
         axes[1].set_xlabel('Predicted')
         axes[1].set_ylabel('True')
         axes[1].set_title('Confusion Matrix - %')
-        
-        
+
+
 
         if self.use_wandb:
 
-            
+
             ## Save both confusion matrix images
             wandb.log({'conf_matrix': wandb.Image(fig)})
-            
+
             matrix_table = wandb.Table(columns=["SN I","SN II", "CV", "AGN", "TDE"], data=conf_matrix)
-            
+
             ## Save absolute confusion matrix as table
             artifact_matrix = wandb.Artifact("confusion-matrix", type="table")
             artifact_matrix.add(matrix_table, "absolute-confusion-matrix")
             wandb.log_artifact(artifact_matrix)
-         
+
         return conf_matrix
-    
-    
-    
+
+
+
 def run(config, trial, add_notes=None, tags_list=None):
-    
+
     train_dataset = CiderDataset(config, split='train')
     val_dataset = CiderDataset(config, split='val')
 
@@ -1210,9 +1210,9 @@ def run(config, trial, add_notes=None, tags_list=None):
 
     optimizer = Adam(model.parameters(), lr=config['lr'], betas=(config['beta1'], config['beta2']), weight_decay=config['weight_decay'])
     scheduler, warmup_scheduler = get_schedulers(config, optimizer)
-    
+
     #if config['class_weights']:
-    
+
         #if os.path.isfile(config['class_weights_path']):
         #    with open(config['class_weights_path'], 'rb') as file:
         #        weights = pickle.load(file)
@@ -1221,14 +1221,14 @@ def run(config, trial, add_notes=None, tags_list=None):
         #    weight_tensor = torch.tensor(weight_sorted_list, dtype=torch.float32)
         #    criterion = torch.nn.CrossEntropyLoss(weight=weight_tensor)
         #    criterion_val = torch.nn.CrossEntropyLoss()
-        #    
+        #
         #else:
         #    raise ValueError(f'class weights=True, but no class weight file at config[class_weights_path] exists')
-        
+
     #else:
     criterion = torch.nn.CrossEntropyLoss()
     criterion_val = torch.nn.CrossEntropyLoss()
-    
+
     trainer = Trainer(model=model, optimizer=optimizer, scheduler=scheduler, warmup_scheduler=warmup_scheduler, criterion=criterion, criterion_val = criterion_val, device=device, config=config, trial=trial)
     best_val_loss = trainer.train(train_dataloader, val_dataloader, epochs=config['epochs'])
 
@@ -1259,9 +1259,9 @@ def set_random_seeds(random_seed):
     torch.cuda.manual_seed(random_seed)
     np.random.seed(random_seed)
     random.seed(random_seed)
-    torch.backends.cudnn.deterministic 
-    
-    
+    torch.backends.cudnn.deterministic
+
+
 import wandb
 
 WANDB_NOTEBOOK_NAME = 'CIDER.ipynb'
@@ -1286,7 +1286,7 @@ def objective(trial):
 
     if config['save_weights']:
         os.makedirs(config['weights_path'], exist_ok=True)
-        #update config file? 
+        #update config file?
 
     best_val_loss = run(config, trial)
     wandb.finish()
@@ -1295,7 +1295,7 @@ def objective(trial):
 
 if __name__ == '__main__':
     STUDY_NAME = 'all'
-    
+
     try:
         study = optuna.create_study(study_name=STUDY_NAME, direction='minimize', pruner=optuna.pruners.NopPruner())
         print(f"Study '{STUDY_NAME}' created.")
