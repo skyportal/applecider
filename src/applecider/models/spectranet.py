@@ -1,14 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from hyrax.models import hyrax_model
 
 
 class SpectraNetBlock(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_sizes, use_ln=True, do_pool=False
-    ):
+    def __init__(self, in_channels, out_channels, kernel_sizes, use_ln=True, do_pool=False):
         """Basic layer block for SpectraNet. Typically generated from parameters
         through the `make_stage` function and as part of the `SpectraNet` initialization.
         """
@@ -19,14 +16,9 @@ class SpectraNetBlock(nn.Module):
         norm_channels = out_channels * self.k
 
         self.convs = nn.ModuleList(
-            [
-                nn.Conv1d(in_channels, out_channels, kernel_size=k, padding=k // 2)
-                for k in kernel_sizes
-            ]
+            [nn.Conv1d(in_channels, out_channels, kernel_size=k, padding=k // 2) for k in kernel_sizes]
         )
-        self.norm = (
-            nn.LayerNorm(norm_channels) if use_ln else nn.BatchNorm1d(norm_channels)
-        )
+        self.norm = nn.LayerNorm(norm_channels) if use_ln else nn.BatchNorm1d(norm_channels)
 
         if do_pool:
             self.total_pooled_channels = norm_channels
@@ -113,12 +105,7 @@ class SpectraNet(nn.Module):
         flat_dim = spectranet_config["flat_dim"]
         class_order = spectranet_config["class_order"]
 
-        if (
-            len(depths)
-            != len(use_ln_stages)
-            != len(channels)
-            != len(kernel_sizes_per_stage)
-        ):
+        if len(depths) != len(use_ln_stages) != len(channels) != len(kernel_sizes_per_stage):
             raise ValueError(
                 "depths, use_ln_stages, channels, and kernel_sizes_per_stage must be the same length."
             )
