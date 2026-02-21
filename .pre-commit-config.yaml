@@ -52,6 +52,7 @@ repos:
       - id: ruff
         name: Lint code using ruff; sort and organize imports 
         types_or: [ python, pyi ]
+        exclude: ^_archive/
         args: ["--fix"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
@@ -60,13 +61,21 @@ repos:
       - id: ruff-format
         name: Format code using ruff
         types_or: [ python, pyi, jupyter ]
+        exclude: ^_archive/
     # Make sure Sphinx can build the documentation without issues.
   - repo: local
     hooks:
       - id: sphinx-build
         name: Build documentation with Sphinx
         entry: sphinx-build
-        language: system
+        language: python
+        additional_dependencies:
+          [
+            "sphinx",
+            "sphinx-autoapi",
+            "sphinx-copybutton",
+            "sphinx-rtd-theme",
+          ]
         always_run: true
         exclude_types: [file, symlink]
         args:
