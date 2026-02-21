@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import torch
 from hyrax.data_sets.data_set_registry import HyraxDataset
