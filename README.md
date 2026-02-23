@@ -5,10 +5,9 @@
 
 
 <p align="center"><i><b><ins>App</ins></b>lying multimoda<ins><b>l</b></ins> l<ins><b>e</ins></b>arning to <ins><b>C</ins></b>lassify trans<b><ins>i</ins></b>ent <b><ins>D</ins></b>etections <b><ins>E</ins></b>a<b><ins>r</ins></b>ly</i></p>
-<p align="center"><i>(repo under construction circa 5/16)</i></p>
 
 
-`AppleCiDEr` ([arXiv](https://arxiv.org/abs/2507.16088) ) is a multimodal transient classifer that uses photometry, metadata, images and spectra. <i>Name inspired by University of Minnesota's famous [apple program](https://mnhardy.umn.edu/apples).</i> <br>
+`AppleCiDEr` ([arXiv](https://arxiv.org/abs/2507.16088)) is a multimodal transient classifier that uses photometry, metadata, images, and spectra. <i>Name inspired by University of Minnesota's famous [apple program](https://mnhardy.umn.edu/apples).</i> <br>
 
 
 <br><br>
@@ -18,39 +17,82 @@
 
 <br><br>
 ***
-IP structure:
+## Repository layout
 
 ```
-AppleCider Architecture 
-└── core
-    ├── dataset.py             # DataGenerator
-    ├── model.py               # implement multimodal models. contains: AppleCider (for all modalities), ZwickyCoder (for photo, image, metadata)
-    └── trainer.py             
-└── models                               # collection of models used in AppleCiDEr and baseline models    
-    ├── BaselineCLS.py      # photometry model   
-    ├── AstroMiNN.py        # image, metadata model
-    └── other models           # old models for comparison
-        ├── Informer.py        # photometry model (from AstroM3)
-        ├── BTSModel.py        # image model      (adapted from BTSbot)
-        ├── MetaModel.py       # metadata model   (from AstroM3)
-        └── GalSpecNet.py      # spectra model
-
-└── preprocess
-    ├── process.py                   # preprocess script
-    ├── alert_processor.py           # for ZTF alerts
-    ├── photometry_processor.py      # for aux ZTF alerts
-    ├── data_preprocessor.py         # combined ZTF, aux
-    ├── transient_dataset.py         # preprocess dataset, save as "new" object alerts
-└── notebooks
-└── files
-    ├── ZTF_IDs.txt    # all ZTF IDs used in AppleCiDEr's dataset
-    └── cider_BTS.csv  # objects (+ classification) used to train AppleCiDEr that are in the public Bright Transient Survey
-
-└── logo
-
+applecider/
+├── src/applecider/
+│   ├── datasets/              # dataset classes and sampling helpers
+│   ├── models/                # AppleCiDEr and baseline model implementations
+│   └── preprocessing_utils/   # multimodal preprocessing pipeline utilities
+├── scripts/
+│   └── fusion_preprocessing.py
+├── tests/
+│   └── applecider/
+├── docs/
+│   ├── conf.py
+│   ├── index.rst
+│   ├── notebooks/
+│   ├── pre_executed/
+│   └── static/
+├── _archive/                  # legacy code/notebooks kept for reference
+├── pyproject.toml
+└── .pre-commit-config.yaml
 ```
 
-### citation
+## Developer quickstart
+
+Create and activate a conda environment:
+
+```bash
+conda create --name applecider python=3.12
+conda activate applecider
+```
+
+Clone and enter the repository:
+
+```bash
+git clone https://github.com/skyportal/applecider.git
+cd applecider
+```
+
+Install optional compiled dependencies used by parts of the preprocessing stack:
+
+```bash
+conda install -c conda-forge llvmlite numba
+```
+
+Install in editable mode with development dependencies:
+
+```bash
+python -m pip install -e '.[dev]'
+```
+
+Set up pre-commit hooks:
+
+```bash
+pre-commit install
+```
+
+Run all checks locally (recommended before push):
+
+```bash
+pre-commit run --all-files
+```
+
+Run tests directly:
+
+```bash
+python -m pytest --cov=./src --cov-report=html
+```
+
+Build docs directly:
+
+```bash
+sphinx-build -T -E -b html -d ./docs/_build/doctrees ./docs ./_readthedocs
+```
+
+## Citation
 
 ```
 @article{junell2025AppleCiDEr,
@@ -64,4 +106,3 @@ AppleCider Architecture
 }
 
 ```
-
