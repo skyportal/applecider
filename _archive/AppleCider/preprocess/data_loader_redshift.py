@@ -1,18 +1,16 @@
 """SpectraNet model definition.
 Authored by Maojie Xu, Argyro Sasli, and Alexandra Junell (2025)
 """
-from torch.utils.data import Dataset, DataLoader
-import os
-import pandas as pd
 import numpy as np
 import torch
-from torchvision import transforms
+from torch.utils.data import DataLoader
+
 
 class SpectraPTDataset(torch.utils.data.Dataset):
-    def __init__(self, pt_path, redshift_key='redshift_errors', apply_mask=False):
+    def __init__(self, pt_path, redshift_key="redshift_errors", apply_mask=False):
         data = torch.load(pt_path)
-        self.flux = data['flux']                # shape: [N, 1, 4096]
-        self.labels = data[redshift_key]        # shape: [N]
+        self.flux = data["flux"]  # shape: [N, 1, 4096]
+        self.labels = data[redshift_key]  # shape: [N]
         self.apply_mask = apply_mask
 
         assert self.flux.shape[0] == len(self.labels), "Mismatch in flux and redshift length"
@@ -51,27 +49,45 @@ class SpectraPTDataset(torch.utils.data.Dataset):
 
         return x, mask
 
-    
+
 def create_data_loaders(config):
     train_dataset = SpectraPTDataset(
-        pt_path=config['train_dir'],
-        redshift_key='redshift_errors',
-        apply_mask=True, 
+        pt_path=config["train_dir"],
+        redshift_key="redshift_errors",
+        apply_mask=True,
     )
     val_dataset = SpectraPTDataset(
-        pt_path=config['val_dir'],
-        redshift_key='redshift_errors',
+        pt_path=config["val_dir"],
+        redshift_key="redshift_errors",
         apply_mask=False,
     )
     test_dataset = SpectraPTDataset(
-        pt_path=config['test_dir'],
-        redshift_key='redshift_errors',
+        pt_path=config["test_dir"],
+        redshift_key="redshift_errors",
         apply_mask=False,
     )
 
-    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'], pin_memory=True)
-    val_loader   = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=config['num_workers'], pin_memory=True)
-    test_loader  = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=config['num_workers'], pin_memory=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
 
     return train_loader, val_loader, test_loader
 
@@ -79,25 +95,44 @@ def create_data_loaders(config):
 class FusionDataset(torch.utils.data.Dataset):
     def __init__(self, pt_path):
         data = torch.load(pt_path)
-        self.fusion_input = data['x']   
-        self.labels = data['y']         
+        self.fusion_input = data["x"]
+        self.labels = data["y"]
         assert self.fusion_input.shape[0] == len(self.labels)
 
     def __len__(self):
         return self.fusion_input.shape[0]
 
     def __getitem__(self, idx):
-        x = self.fusion_input[idx]            # [10, 2]
+        x = self.fusion_input[idx]  # [10, 2]
         y = self.labels[idx].float().unsqueeze(0)
         return x, y
-    
-def create_fusion_loaders(config):
-    train_dataset = FusionDataset(config['train_dir'])
-    val_dataset = FusionDataset(config['val_dir'])
-    test_dataset = FusionDataset(config['test_dir'])
 
-    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, num_workers=config['num_workers'], pin_memory=True)
-    val_loader   = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=config['num_workers'], pin_memory=True)
-    test_loader  = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False, num_workers=config['num_workers'], pin_memory=True)
+
+def create_fusion_loaders(config):
+    train_dataset = FusionDataset(config["train_dir"])
+    val_dataset = FusionDataset(config["val_dir"])
+    test_dataset = FusionDataset(config["test_dir"])
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
 
     return train_loader, val_loader, test_loader

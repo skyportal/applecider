@@ -1,27 +1,21 @@
-import math
-from math import sqrt
-import numpy as np
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
 
 
 class GalSpecNet(nn.Module):
-    
+
     """
     GalSpecNet
     Paper: https://doi.org/10.1093/mnras/stad2913
     """
-    
+
     def __init__(self, config):
         super(GalSpecNet, self).__init__()
 
-        self.classification = True if config['mode'] == 'spectra' else False
-        self.dropout_rate = config['s_dropout']
-        self.conv_channels = config['s_conv_channels']
-        self.kernel_size = config['s_kernel_size']
-        self.mp_kernel_size = config['s_mp_kernel_size']
+        self.classification = True if config["mode"] == "spectra" else False
+        self.dropout_rate = config["s_dropout"]
+        self.conv_channels = config["s_conv_channels"]
+        self.kernel_size = config["s_kernel_size"]
+        self.mp_kernel_size = config["s_mp_kernel_size"]
 
         self.layers = nn.ModuleList([])
 
@@ -37,10 +31,9 @@ class GalSpecNet(nn.Module):
         self.dropout = nn.Dropout(self.dropout_rate)
 
         if self.classification:
-            self.fc = nn.Linear(1632, config['num_classes'])
+            self.fc = nn.Linear(1632, config["num_classes"])
 
     def forward(self, x):
-        
         for layer in self.layers:
             x = layer(x)
 
