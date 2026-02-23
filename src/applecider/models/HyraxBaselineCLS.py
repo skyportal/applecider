@@ -1,12 +1,9 @@
-from hyrax import Hyrax
-from hyrax.models import hyrax_model
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from applecider.models.Time2Vec import Time2Vec
+from hyrax.models import hyrax_model
 
 
 @hyrax_model
@@ -18,25 +15,28 @@ class HyraxBaselineCLS(nn.Module):
         self.criterion = FocalLoss()
 
         model_config = config["model"]["HyraxBaselineCLS"]
-        #self.optimizer = torch.optim.AdamW(self.parameters(), lr=model_config["lr"], weight_decay=model_config["weight_decay"])
+        # self.optimizer = torch.optim.AdamW(self.parameters(), lr=model_config["lr"], weight_decay=model_config["weight_decay"])
         # Use AdamW eventually
 
+        self.in_proj = nn.Linear(7, model_config["d_model"])
+        self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config["d_model"]))
 
-        self.in_proj = nn.Linear(7, model_config['d_model'])
-        self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config['d_model']))
-
-        self.time2vec = Time2Vec(model_config['d_model'])
+        self.time2vec = Time2Vec(model_config["d_model"])
 
         enc_layer = nn.TransformerEncoderLayer(
-            model_config['d_model'], model_config['n_heads'], model_config['d_model'] * 4,
-            model_config['dropout'], batch_first=True)
-        self.encoder = nn.TransformerEncoder(enc_layer, model_config['n_layers'])
-        self.norm = nn.LayerNorm(model_config['d_model'])
-        self.head = nn.Linear(model_config['d_model'], model_config['num_classes'])
+            model_config["d_model"],
+            model_config["n_heads"],
+            model_config["d_model"] * 4,
+            model_config["dropout"],
+            batch_first=True,
+        )
+        self.encoder = nn.TransformerEncoder(enc_layer, model_config["n_layers"])
+        self.norm = nn.LayerNorm(model_config["d_model"])
+        self.head = nn.Linear(model_config["d_model"], model_config["num_classes"])
 
-        self.classification = True if model_config['mode'] == 'photo' else False
+        self.classification = True if model_config["mode"] == "photo" else False
         if self.classification:
-            self.fc = nn.Linear(model_config['d_model'], model_config['num_classes'])
+            self.fc = nn.Linear(model_config["d_model"], model_config["num_classes"])
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
 
@@ -57,7 +57,7 @@ class HyraxBaselineCLS(nn.Module):
         B, L, _ = data.shape
 
         # project into model dim
-        h = self.in_proj(data)                     # (B, L, d_model)
+        h = self.in_proj(data)  # (B, L, d_model)
         # extract the *continuous* log1p dt feature
         t = data[..., 0]
 
@@ -66,10 +66,10 @@ class HyraxBaselineCLS(nn.Module):
         te = self.time2vec(t)
 
         # add it:
-        hte = h + te                              # (B, L, d_model)
+        hte = h + te  # (B, L, d_model)
         # prepend a learned CLS token:
-        tok = self.cls_tok.expand(B, -1, -1)      # (B,1,d_model)
-        hte = torch.cat([tok, hte], dim=1)        # (B, L+1, d_model)
+        tok = self.cls_tok.expand(B, -1, -1)  # (B,1,d_model)
+        hte = torch.cat([tok, hte], dim=1)  # (B, L+1, d_model)
 
         pad_extended = F.pad(pad, (1, 0), value=False)
 
@@ -107,13 +107,12 @@ class HyraxBaselineCLS(nn.Module):
         loss = self.criterion(decoded, labels)
         self.optimizer.zero_grad()
         loss.backward()
-        #gradient clipping
+        # gradient clipping
         # TODO: make this a config option, potentially a general
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
 
         self.optimizer.step()
         numpy_logits = decoded.detach().cpu().numpy()
-
 
         # Additional metrics
         # We wanted epoch-level metrics to assess, but hyrax potentially only allows batch-level metrics here (ask Drew)
@@ -136,7 +135,7 @@ class HyraxBaselineCLS(nn.Module):
             - 'band': band indices (1D array, integers)
 
         Returns
-     -------
+        -------
         torch.Tensor
             A tensor of shape (L, 7), where L is the sequence length.
         """
@@ -163,20 +162,25 @@ class HyraxBaselineCLS(nn.Module):
 
         # Generate all-false padding mask if not provided, useful for infer step
         # The +1 is to account for the CLS token added in the model.
-        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]+1), dtype=bool)
+        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1] + 1), dtype=bool)
         return (photo_tensor, false_mask, label_tensor)
 
+
 class FocalLoss(nn.Module):
-    def __init__(self, gamma: float = 2.0, alpha: torch.Tensor = None, eps: float = 0, reduction: str = 'mean'): #eps=0.1
+    def __init__(
+        self, gamma: float = 2.0, alpha: torch.Tensor = None, eps: float = 0, reduction: str = "mean"
+    ):  # eps=0.1
         super().__init__()
 
         self.gamma, self.alpha, self.eps, self.reduction = gamma, alpha, eps, reduction
+
     def forward(self, logits: torch.Tensor, target: torch.Tensor):
         B, C = logits.shape
-        logp = F.log_softmax(logits, dim=1); p = logp.exp()
+        logp = F.log_softmax(logits, dim=1)
+        p = logp.exp()
         if self.eps > 0:
-            smooth = torch.full_like(logp, fill_value=self.eps/(C-1))
-            smooth.scatter_(1, target.unsqueeze(1), 1.0-self.eps)
+            smooth = torch.full_like(logp, fill_value=self.eps / (C - 1))
+            smooth.scatter_(1, target.unsqueeze(1), 1.0 - self.eps)
             y = smooth
         else:
             y = F.one_hot(target, num_classes=C).float()
@@ -184,7 +188,8 @@ class FocalLoss(nn.Module):
         if self.alpha is not None:
             focal_weight = focal_weight * self.alpha.view(1, C)
         loss = -(y * focal_weight * logp).sum(dim=1)
-        return loss.mean() if self.reduction=='mean' else loss.sum()
+        return loss.mean() if self.reduction == "mean" else loss.sum()
+
 
 @hyrax_model
 class MPTModel(nn.Module):
@@ -197,15 +202,19 @@ class MPTModel(nn.Module):
         model_config = config["model"]["HyraxBaselineCLS"]
 
         enc_layer = nn.TransformerEncoderLayer(
-            model_config['d_model'], model_config['n_heads'], model_config['d_model'] * 4,
-            model_config['dropout'], batch_first=True)
-        self.encoder = nn.TransformerEncoder(enc_layer, model_config['n_layers'])
+            model_config["d_model"],
+            model_config["n_heads"],
+            model_config["d_model"] * 4,
+            model_config["dropout"],
+            batch_first=True,
+        )
+        self.encoder = nn.TransformerEncoder(enc_layer, model_config["n_layers"])
 
-        self.in_proj = nn.Linear(7, model_config['d_model'])
-        self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config['d_model']))
-        self.time2vec = Time2Vec(model_config['d_model'])
+        self.in_proj = nn.Linear(7, model_config["d_model"])
+        self.cls_tok = nn.Parameter(torch.zeros(1, 1, model_config["d_model"]))
+        self.time2vec = Time2Vec(model_config["d_model"])
 
-        #self.encoder    = base_enc.encoder
+        # self.encoder    = base_enc.encoder
         d = self.in_proj.out_features
         self.head_flux = nn.Linear(d, 1)
         self.head_band = nn.Linear(d, 3)
@@ -213,11 +222,11 @@ class MPTModel(nn.Module):
 
         # TODO: Resolve optimizer setup
         self.optimizer = torch.optim.AdamW(self.parameters(), lr=1e-4)
-        #opt = torch.optim.AdamW([
-        #{'params': enc.encoder.parameters(), 'lr': PT_LR*0.5},
-        #{'params': list(mpt.head_flux.parameters())+list(mpt.head_band.parameters())+list(mpt.head_dt.parameters()),
+        # opt = torch.optim.AdamW([
+        # {'params': enc.encoder.parameters(), 'lr': PT_LR*0.5},
+        # {'params': list(mpt.head_flux.parameters())+list(mpt.head_band.parameters())+list(mpt.head_dt.parameters()),
         # 'lr': PT_LR},
-        #], weight_decay=1e-2)
+        # ], weight_decay=1e-2)
 
     def forward(self, z):
         return self.head_flux(z), self.head_band(z), self.head_dt(z)
@@ -225,13 +234,13 @@ class MPTModel(nn.Module):
     def train_step(self, batch):
         data = batch[0]
         pad = batch[1]
-        #import pdb;pdb.set_trace()
+        # import pdb;pdb.set_trace()
         masked_tok = self._mask_batch(data, pad)
 
         B, L, _ = data.shape
 
         # project into model dim
-        emb = self.in_proj(data)                     # (B, L, d_model)
+        emb = self.in_proj(data)  # (B, L, d_model)
         # extract the *continuous* log1p dt feature
         t = data[..., 0]
 
@@ -240,18 +249,18 @@ class MPTModel(nn.Module):
         te = F.dropout(te, p=self.config["model"]["HyraxBaselineCLS"]["dropout"])
 
         # add it:
-        h_in = emb + te                              # (B, L, d_model)
+        h_in = emb + te  # (B, L, d_model)
         # prepend a learned CLS token:
-        tok = self.cls_tok.expand(B, -1, -1)      # (B,1,d_model)
-        h = torch.cat([tok, h_in], dim=1)        # (B, L+1, d_model)
-        pad  = torch.cat([pad.new_zeros((B,1)), pad], 1)
+        tok = self.cls_tok.expand(B, -1, -1)  # (B,1,d_model)
+        h = torch.cat([tok, h_in], dim=1)  # (B, L+1, d_model)
+        pad = torch.cat([pad.new_zeros((B, 1)), pad], 1)
 
         # encode
         z_full = self.encoder(h, src_key_padding_mask=pad)  # (B, L+1, d_model)
         h_masked = z_full[:, 1:, :]  # (B, L, d_model)
         f_hat = self.head_flux(h_masked)  # (B, L, 1)
         b_hat = self.head_band(h_masked)  # (B, L, 3)
-        dt_hat = self.head_dt(h_masked)   # (B, L, 1)
+        dt_hat = self.head_dt(h_masked)  # (B, L, 1)
 
         mf = masked_tok.contiguous().view(-1)
         true_f = data[..., 2].view(-1)
@@ -280,24 +289,31 @@ class MPTModel(nn.Module):
         B, L, _ = x.shape
         for b in range(B):
             valid = (~pad_mask[b]).nonzero(as_tuple=True)[0]
-            k = max(int(len(valid)*MASK_P), 3)
-            num_each = k // 3; extras = k - 3*num_each
-            bands    = x[b, :, 4:7].argmax(-1)
-            idxs     = []
-            for band in [0,1,2]:
-                valid_b = valid[bands[valid]==band]
-                if len(valid_b)>0:
+            k = max(int(len(valid) * MASK_P), 3)
+            num_each = k // 3
+            extras = k - 3 * num_each
+            bands = x[b, :, 4:7].argmax(-1)
+            idxs = []
+            for band in [0, 1, 2]:
+                valid_b = valid[bands[valid] == band]
+                if len(valid_b) > 0:
                     take = min(len(valid_b), num_each)
                     perm = torch.randperm(len(valid_b))[:take]
                     idxs.append(valid_b[perm])
-            if extras>0:
-                remaining = torch.cat(idxs) if len(idxs)>0 else torch.tensor([], device=valid.device, dtype=valid.dtype)
+            if extras > 0:
+                remaining = (
+                    torch.cat(idxs)
+                    if len(idxs) > 0
+                    else torch.tensor([], device=valid.device, dtype=valid.dtype)
+                )
                 pool = valid[~torch.isin(valid, remaining)]
-                if len(pool)>0:
+                if len(pool) > 0:
                     perm = torch.randperm(len(pool))[:extras]
                     idxs.append(pool[perm])
-            idx = torch.cat(idxs) if len(idxs)>0 else torch.tensor([], device=valid.device, dtype=valid.dtype)
-            if len(idx)>0:
+            idx = (
+                torch.cat(idxs) if len(idxs) > 0 else torch.tensor([], device=valid.device, dtype=valid.dtype)
+            )
+            if len(idx) > 0:
                 x[b, idx, 2:7] = 0.0
                 masked[b, idx] = True
         return masked
@@ -318,7 +334,7 @@ class MPTModel(nn.Module):
             - 'band': band indices (1D array, integers)
 
         Returns
-     -------
+        -------
         torch.Tensor
             A tensor of shape (L, 7), where L is the sequence length.
         """
@@ -344,5 +360,5 @@ class MPTModel(nn.Module):
 
         # Generate all-false padding mask if not provided, useful for infer step
         # The +1 is to account for the CLS token added in the model.
-        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]+1), dtype=bool)
+        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1] + 1), dtype=bool)
         return (photo_tensor, false_mask, label_tensor)

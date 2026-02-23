@@ -1,18 +1,17 @@
-import os
 import gc
-import random
 import logging
-
-import numpy as np
-import torch
+import os
+import random
 
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
-
+import torch
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
 )
+
 
 # some utility functions/helpers
 def set_seed(seed=42):
@@ -22,16 +21,19 @@ def set_seed(seed=42):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+
 
 def print_config(config, trial=None):
     logger = logging.getLogger(__name__)
-    trial_id = getattr(trial, 'number', 'Manual')
-    config_str = ' | '.join([f"{k}={v}" for k, v in config.items()])
+    trial_id = getattr(trial, "number", "Manual")
+    config_str = " | ".join([f"{k}={v}" for k, v in config.items()])
     logger.info(f"[Trial {trial_id}] {config_str}")
 
+
 def get_device():
-    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 # some metrics functions
 def compute_class_top3_acc(all_targets, all_probs, num_classes):
@@ -47,46 +49,70 @@ def compute_class_top3_acc(all_targets, all_probs, num_classes):
             class_top3_acc.append(0.0)
     return class_top3_acc
 
+
 def safe_classification_report(all_targets, all_preds, class_names):
     try:
-        return classification_report(all_targets, all_preds, target_names=class_names, output_dict=True, zero_division=0)
+        return classification_report(
+            all_targets, all_preds, target_names=class_names, output_dict=True, zero_division=0
+        )
     except:
-        return {cls: {'f1-score': 0.0} for cls in class_names}
+        return {cls: {"f1-score": 0.0} for cls in class_names}
+
 
 def save_confusion_matrix_if_needed(all_targets, all_preds, class_names, project_root, epoch):
     save_dir = os.path.join(project_root, "record")
     os.makedirs(save_dir, exist_ok=True)
-    suffix = f"val_epoch_{epoch + 1:03d}" if isinstance(epoch, int) else "test_comparison" if epoch == "test" else str(epoch)
+    suffix = (
+        f"val_epoch_{epoch + 1:03d}"
+        if isinstance(epoch, int)
+        else "test_comparison"
+        if epoch == "test"
+        else str(epoch)
+    )
     save_path = os.path.join(save_dir, f"confusion_matrix_{suffix}.png")
-    plot_confusion_matrix_double(all_targets, all_preds, class_names, save_path=save_path, dataset_type=suffix)
+    plot_confusion_matrix_double(
+        all_targets, all_preds, class_names, save_path=save_path, dataset_type=suffix
+    )
+
 
 def plot_confusion_matrix_double(y_true, y_pred, class_names, save_path=None, dataset_type=None):
     cm = confusion_matrix(y_true, y_pred)
-    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    cm_normalized = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Purples', xticklabels=class_names, yticklabels=class_names, ax=axes[0])
-    axes[0].set_title('Confusion Matrix - Absolute Values')
-    axes[0].set_xlabel('Predicted')
-    axes[0].set_ylabel('True')
+    sns.heatmap(
+        cm, annot=True, fmt="d", cmap="Purples", xticklabels=class_names, yticklabels=class_names, ax=axes[0]
+    )
+    axes[0].set_title("Confusion Matrix - Absolute Values")
+    axes[0].set_xlabel("Predicted")
+    axes[0].set_ylabel("True")
 
-    sns.heatmap(cm_normalized * 100, annot=True, fmt='.0f', cmap='Purples', xticklabels=class_names, yticklabels=class_names, ax=axes[1])
-    axes[1].set_title('Confusion Matrix - %')
-    axes[1].set_xlabel('Predicted')
-    axes[1].set_ylabel('True')
+    sns.heatmap(
+        cm_normalized * 100,
+        annot=True,
+        fmt=".0f",
+        cmap="Purples",
+        xticklabels=class_names,
+        yticklabels=class_names,
+        ax=axes[1],
+    )
+    axes[1].set_title("Confusion Matrix - %")
+    axes[1].set_xlabel("Predicted")
+    axes[1].set_ylabel("True")
 
-    title = 'Confusion Matrix Comparison'
+    title = "Confusion Matrix Comparison"
     if dataset_type:
-        title = f'{title} {dataset_type}'
+        title = f"{title} {dataset_type}"
 
     plt.suptitle(title, fontsize=18)
     plt.tight_layout()
 
-    if save_path :
+    if save_path:
         plt.savefig(save_path)
 
     plt.show()
+
 
 # multi seed run for better statistics
 def run_multi_seed(config, seed_list, main=None, build_model=None):
@@ -97,7 +123,7 @@ def run_multi_seed(config, seed_list, main=None, build_model=None):
 
     for i, seed in enumerate(seed_list):
         print(f"\n=== Running seed {seed} ({i+1}/{len(seed_list)}) ===")
-        config['seed'] = seed
+        config["seed"] = seed
         test_score, test_metrics = main(trial=None, config=config, build_model=build_model)
 
         test_scores.append(test_score)
@@ -157,9 +183,11 @@ def run_multi_seed(config, seed_list, main=None, build_model=None):
 
     print("\n=== Multi-Seed Test Results ===")
     for i, seed in enumerate(seed_list):
-        print(f"Seed {seed}: Composite Score = {test_scores[i]:.4f}, "
-              f"Acc = {acc_list[i]:.2f}%, Top-3 Acc = {top3_acc_list[i]:.2f}%, "
-              f"F1 = {f1_list[i]:.4f}, Macro AUC = {macro_auc_list[i]:.4f}")
+        print(
+            f"Seed {seed}: Composite Score = {test_scores[i]:.4f}, "
+            f"Acc = {acc_list[i]:.2f}%, Top-3 Acc = {top3_acc_list[i]:.2f}%, "
+            f"F1 = {f1_list[i]:.4f}, Macro AUC = {macro_auc_list[i]:.4f}"
+        )
 
     print("\n=== Multi-Seed Mean / Std ===")
     print(f"Composite Score: Mean = {mean_score:.4f}, Std = {std_score:.4f}")
@@ -176,25 +204,29 @@ def run_multi_seed(config, seed_list, main=None, build_model=None):
 
     return result_summary
 
+
 # some training helpers
 def get_cb_weights(train_df, class_names, beta=0.9999):
-    label_counts = train_df['label'].value_counts().to_dict()
+    label_counts = train_df["label"].value_counts().to_dict()
     class_counts = [label_counts.get(c, 1) for c in class_names]
-    effective_nums = [(1 - beta ** n) / (1 - beta) for n in class_counts]
+    effective_nums = [(1 - beta**n) / (1 - beta) for n in class_counts]
     weights = [1.0 / en for en in effective_nums]
     weights = [w / sum(weights) for w in weights]
     return torch.tensor(weights, dtype=torch.float)
 
+
 def calculate_composite_score(acc, top3_acc, f1, minority_acc, weights=(0.4, 0.3, 0.3, 0)):
     return (
-        weights[0] * acc +
-        weights[1] * top3_acc +
-        weights[2] * f1 +
-        weights[3] * (minority_acc if minority_acc is not None else 0.0)
+        weights[0] * acc
+        + weights[1] * top3_acc
+        + weights[2] * f1
+        + weights[3] * (minority_acc if minority_acc is not None else 0.0)
     )
+
 
 def early_stopping(no_improve_epochs, patience):
     return no_improve_epochs >= patience
+
 
 def clean_memory():
     gc.collect()

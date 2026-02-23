@@ -1,6 +1,7 @@
 import numpy as np
 
-class OversamplerMixin():
+
+class OversamplerMixin:
     """Mixin class for handling oversampling in datasets.
 
     This mixin provides methods to calculate the required number of additional samples
@@ -23,7 +24,9 @@ class OversamplerMixin():
 
     """
 
-    def _calculate_over_sampling_counts(self, ideal_class_distribution: list = None, class_counts: list = None):
+    def _calculate_over_sampling_counts(
+        self, ideal_class_distribution: list = None, class_counts: list = None
+    ):
         """Calculate the number of additional samples needed per class to achieve
         the desired class distribution.
         Parameters
@@ -76,7 +79,6 @@ class OversamplerMixin():
         self.additional_samples_per_class = target_floor - class_counts
         self.total_count_with_oversampling = np.sum(target_floor)
 
-
     def prepare_over_sampling(self, ideal_class_distribution: list = None, class_at_index: list = None):
         """Calculate the oversampling indices for the dataset based on the ideal class distribution.
 
@@ -110,7 +112,9 @@ class OversamplerMixin():
         self._calculate_over_sampling_counts(ideal_class_distribution, class_counts)
 
         # Create an array that will map oversampled indices back to original indices
-        oversampled_idx_to_original_idx = np.stack([np.arange(self._original_count), np.zeros(self._original_count, dtype=int)])
+        oversampled_idx_to_original_idx = np.stack(
+            [np.arange(self._original_count), np.zeros(self._original_count, dtype=int)]
+        )
 
         # Fill the oversampled_to_original_index array
         for class_index, additional_count in enumerate(self.additional_samples_per_class):
@@ -119,7 +123,7 @@ class OversamplerMixin():
             selected_indexes = rng.choice(original_indices_for_class, size=additional_count, replace=True)
             # stack selected_indexes on an array of ones to represent oversampled entries
             selected_indexes = np.stack([selected_indexes, np.ones(len(selected_indexes), dtype=int)])
-            #concatenate original_index to oversampled_idx_to_original_idx
+            # concatenate original_index to oversampled_idx_to_original_idx
             oversampled_idx_to_original_idx = np.hstack((oversampled_idx_to_original_idx, selected_indexes))
 
         # Shuffle all the indexes (including the original indexes) so that batches
