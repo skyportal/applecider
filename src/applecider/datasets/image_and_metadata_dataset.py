@@ -3,7 +3,7 @@ import os
 import numpy as np
 import torch
 from applecider.datasets.oversampler_mixin import OversamplerMixin
-from hyrax.data_sets.data_set_registry import HyraxDataset
+from hyrax.datasets import HyraxDataset
 
 EPS = 1e-8  # Small value to prevent division by zero
 REAL_CLASSES = ["AGN", "TDE", "SN II", "SN IIp", "SN Ia", "SN IIn", "SN Ib", "SN Ic", "Cataclysmic"]

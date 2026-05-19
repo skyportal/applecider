@@ -1,13 +1,11 @@
 import numpy as np
 import torch
-from hyrax.data_sets.data_set_registry import HyraxDataset
+from hyrax.datasets import HyraxDataset
 from torch.utils.data import Dataset
 
 
 class SpectraData(HyraxDataset, Dataset):
     def __init__(self, config, data_location=None):
-        super().__init__(config)
-
         data_table = torch.load(data_location)
 
         # Used for casting the classification labels into an

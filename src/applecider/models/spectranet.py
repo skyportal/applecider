@@ -169,7 +169,7 @@ class SpectraNet(nn.Module):
         else:
             return self.classifier(x_fused)
 
-    def train_step(self, batch):
+    def train_batch(self, batch):
         # spectranet uses the `train_one_epoch` function in utils.py
         _, labels, redshifts = batch
 
@@ -183,8 +183,11 @@ class SpectraNet(nn.Module):
         self.optimizer.step()
         return {"loss": loss.item()}
 
+    def infer_batch(self, batch):
+        return self.forward(batch)
+
     @staticmethod
-    def to_tensor(data_dict):
+    def prepare_inputs(data_dict):
         """This method will receive a dictionary of data and should convert it
         to the relevant numpy arrays needed for either training or inference."""
 

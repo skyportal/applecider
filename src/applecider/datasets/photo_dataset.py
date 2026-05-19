@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from applecider.datasets.oversampler_mixin import OversamplerMixin
-from hyrax.data_sets import HyraxDataset
+from hyrax.datasets import HyraxDataset
 from torch.utils.data import Dataset
 
 

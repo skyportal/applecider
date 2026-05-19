@@ -85,7 +85,7 @@ class HyraxBaselineCLS(nn.Module):
             output = F.softmax(output, dim=1)
         return output
 
-    def train_step(self, batch):
+    def train_batch(self, batch):
         """
         This function contains the logic for a single training step. i.e. the
         contents of the inner loop of a ML training process.
@@ -119,8 +119,11 @@ class HyraxBaselineCLS(nn.Module):
         # accuracy, total loss/tot n, any custom metrics
         return {"loss": loss.item(), "num_tdes": np.sum([labels.cpu().numpy() == 4])}
 
+    def infer_batch(self, batch):
+        return self.forward(batch)
+
     @staticmethod
-    def to_tensor(data_dict):
+    def prepare_inputs(data_dict):
         """
         Converts raw data from a dictionary into a PyTorch tensor suitable for the model.
 
@@ -231,7 +234,7 @@ class MPTModel(nn.Module):
     def forward(self, z):
         return self.head_flux(z), self.head_band(z), self.head_dt(z)
 
-    def train_step(self, batch):
+    def train_batch(self, batch):
         data = batch[0]
         pad = batch[1]
         # import pdb;pdb.set_trace()
@@ -283,6 +286,9 @@ class MPTModel(nn.Module):
 
         return {"loss": loss.item()}
 
+    def infer_batch(self, batch):
+        return self.forward(batch)
+
     def _mask_batch(self, x, pad_mask):
         MASK_P = self.config["model"]["HyraxBaselineCLS"]["mask_p"]
         masked = torch.zeros_like(pad_mask)
@@ -319,7 +325,7 @@ class MPTModel(nn.Module):
         return masked
 
     @staticmethod
-    def to_tensor(data_dict):
+    def prepare_inputs(data_dict):
         """
         Converts raw data from a dictionary into a PyTorch tensor suitable for the model.
 
