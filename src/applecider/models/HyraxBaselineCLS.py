@@ -286,6 +286,56 @@ class MPTModel(nn.Module):
 
         return {"loss": loss.item()}
 
+    def validate_batch(self, batch):
+        """This is identical to train_batch but without the backward pass and
+        optimizer step. We can also compute any validation metrics here."""
+        data = batch[0]
+        pad = batch[1]
+        # import pdb;pdb.set_trace()
+        masked_tok = self._mask_batch(data, pad)
+
+        B, L, _ = data.shape
+
+        # project into model dim
+        emb = self.in_proj(data)  # (B, L, d_model)
+        # extract the *continuous* log1p dt feature
+        t = data[..., 0]
+
+        # compute the learned time embedding:
+        te = self.time2vec(t)
+        te = F.dropout(te, p=self.config["model"]["HyraxBaselineCLS"]["dropout"])
+
+        # add it:
+        h_in = emb + te  # (B, L, d_model)
+        # prepend a learned CLS token:
+        tok = self.cls_tok.expand(B, -1, -1)  # (B,1,d_model)
+        h = torch.cat([tok, h_in], dim=1)  # (B, L+1, d_model)
+        pad = torch.cat([pad.new_zeros((B, 1)), pad], 1)
+
+        # encode
+        z_full = self.encoder(h, src_key_padding_mask=pad)  # (B, L+1, d_model)
+        h_masked = z_full[:, 1:, :]  # (B, L, d_model)
+        f_hat = self.head_flux(h_masked)  # (B, L, 1)
+        b_hat = self.head_band(h_masked)  # (B, L, 3)
+        dt_hat = self.head_dt(h_masked)  # (B, L, 1)
+
+        mf = masked_tok.contiguous().view(-1)
+        true_f = data[..., 2].view(-1)
+        loss_f = F.mse_loss(f_hat.view(-1)[mf], true_f[mf])
+        true_b = data[..., 4:7].argmax(-1).view(-1)
+        loss_b = F.cross_entropy(b_hat.view(-1, 3)[mf], true_b[mf])
+        dt_gt = torch.roll(data[..., 1], -1, dims=1)
+        dt_gt[:, -1] = 0.0
+        dt_gt = dt_gt.view(-1)
+        loss_dt = F.mse_loss(dt_hat[..., 0].view(-1)[mf], dt_gt[mf])
+
+        lambda_f = self.config["model"]["HyraxBaselineCLS"]["lambda_f"]
+        lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
+        lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
+        loss = lambda_f * loss_f * lambda_b * loss_b * lambda_dt * loss_dt
+
+        return {"loss": loss.item()}
+
     def infer_batch(self, batch):
         return self.forward(batch)
 
