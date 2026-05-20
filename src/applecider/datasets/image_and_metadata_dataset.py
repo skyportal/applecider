@@ -19,9 +19,7 @@ CLASSES = [
 
 class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
     def __init__(self, config, data_location):
-        self.dataset_config = config["data_set"][
-            "applecider.datasets.image_and_metadata_dataset.ImageAndMetadataDataset"
-        ]
+        self.dataset_config = config["applecider"]["image_and_metadata_dataset"]
 
         self.all_samples = self.dataset_config["all_samples"]
         self.augment = self.dataset_config["augment"]
@@ -59,13 +57,13 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
         super().__init__(config)
         # Additional initialization for image and metadata dataset can be added here
 
-    def get_metadata(self, index):
+    def get_metadata(self, index) -> np.ndarray:
         # Method to retrieve metadata at the specified index
         if self.use_oversampling:
             index, is_oversampled = self.retrieve_oversampled_index(index)
-        return self.raw_files[index].get("metadata")
+        return self.raw_files[index].get("metadata").numpy()
 
-    def get_image(self, index):
+    def get_image(self, index) -> np.ndarray:
         # Method to retrieve image at the specified index
         if self.use_oversampling:
             index, is_oversampled = self.retrieve_oversampled_index(index)
@@ -101,9 +99,9 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
             if self.enable_cache:
                 self.image_cache[index] = image
 
-        return image
+        return image.numpy()
 
-    def get_target(self, index):
+    def get_target(self, index) -> np.ndarray:
         """The `target` is broad class category of the object.
 
         Parameters
@@ -127,7 +125,7 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
 
         return target
 
-    def get_real_target(self, index):
+    def get_real_target(self, index) -> np.ndarray:
         """The `real_target` is the fine-grained classification of the object.
 
         Parameters
@@ -151,16 +149,11 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
 
         return real_target
 
-    def get_obj_id(self, index):
+    def get_obj_id(self, index) -> str:
         # Method to retrieve object ID at the specified index
         if self.use_oversampling:
             index, is_oversampled = self.retrieve_oversampled_index(index)
-        return self.raw_files[index].get("obj_id")
-
-    def ids(self):
-        # Generator to yield all object IDs in the dataset
-        for idx in range(len(self)):
-            yield self.get_obj_id(idx)
+        return str(self.raw_files[index].get("obj_id"))
 
     def __len__(self):
         # Return the total number of items in the dataset
@@ -168,7 +161,3 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
             return self.total_count_with_oversampling
         else:
             return len(self.raw_files)
-
-    def __getitem__(self, index):
-        # Unused, but required by Hyrax to show inheritance from PyTorch Dataset.
-        pass

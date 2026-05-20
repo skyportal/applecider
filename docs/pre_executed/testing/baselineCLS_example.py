@@ -41,12 +41,12 @@ if perform_pretrain:
 
 # Training
 h.set_config("model.HyraxBaselineCLS.use_probabilities", False)
-h.set_config("data_set.'applecider.datasets.photo_dataset.PhotoEventsDataset'.use_oversampling", True)
+h.set_config("applecider.photo_dataset.use_oversampling", True)
 h.train()
 
 # Inference
 h.set_config("model.HyraxBaselineCLS.use_probabilities", True)
 h.set_config(
-    "data_set.'applecider.datasets.photo_dataset.PhotoEventsDataset'.use_oversampling", False
+    "applecider.photo_dataset.use_oversampling", False
 )  # Disable oversampling for inference
 h.infer()

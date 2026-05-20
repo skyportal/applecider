@@ -13,7 +13,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         self.data_location = data_location
         self.filenames = sorted(list(Path(self.data_location).glob("*.npz")))
 
-        self.photo_config = config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]
+        self.photo_config = config["applecider"]["photo_dataset"]
 
         self.manifest_df = pd.read_csv(self.photo_config["manifest_path"])
         self.manifest_df = self.manifest_df.sort_values("obj_id", inplace=False)
@@ -42,21 +42,13 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
             self.prepare_over_sampling(ideal_class_distribution, class_at_index)
         super().__init__(config)
 
-    def __getitem__(self, idx):
-        # getting happens via the getter methods below
-        pass
-
-    def get_object_id(self, idx):
+    def get_object_id(self, idx) -> str:
         """get unique identifier for a specific index"""
         # Find the row in the manifest ids
         old_idx = idx
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
-        return self.object_ids[idx]
-
-    def ids(self):
-        for idx in range(len(self)):
-            yield self.get_object_id(idx)
+        return str(self.object_ids[idx])
 
     def get_label(self, idx):
         """get ID label for a specific index"""
