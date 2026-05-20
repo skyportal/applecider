@@ -61,7 +61,7 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
         # Method to retrieve metadata at the specified index
         if self.use_oversampling:
             index, is_oversampled = self.retrieve_oversampled_index(index)
-        return self.raw_files[index].get("metadata").numpy()
+        return np.asarray(self.raw_files[index].get("metadata"))
 
     def get_image(self, index) -> np.ndarray:
         # Method to retrieve image at the specified index
@@ -99,7 +99,7 @@ class ImageAndMetadataDataset(HyraxDataset, OversamplerMixin):
             if self.enable_cache:
                 self.image_cache[index] = image
 
-        return image.numpy()
+        return np.asarray(image)
 
     def get_target(self, index) -> np.ndarray:
         """The `target` is broad class category of the object.

@@ -45,14 +45,12 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
     def get_object_id(self, idx) -> str:
         """get unique identifier for a specific index"""
         # Find the row in the manifest ids
-        old_idx = idx
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
         return str(self.object_ids[idx])
 
     def get_label(self, idx):
         """get ID label for a specific index"""
-        old_idx = idx
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
         # Find the row in the manifest
