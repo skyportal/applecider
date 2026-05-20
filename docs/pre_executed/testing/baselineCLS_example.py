@@ -46,7 +46,5 @@ h.train()
 
 # Inference
 h.set_config("model.HyraxBaselineCLS.use_probabilities", True)
-h.set_config(
-    "applecider.photo_dataset.use_oversampling", False
-)  # Disable oversampling for inference
+h.set_config("applecider.photo_dataset.use_oversampling", False)  # Disable oversampling for inference
 h.infer()
