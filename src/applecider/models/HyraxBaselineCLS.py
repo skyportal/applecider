@@ -278,7 +278,7 @@ class MPTModel(nn.Module):
         lambda_f = self.config["model"]["HyraxBaselineCLS"]["lambda_f"]
         lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
         lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
-        loss = lambda_f * loss_f * lambda_b * loss_b * lambda_dt * loss_dt
+        loss = lambda_f * loss_f + lambda_b * loss_b + lambda_dt * loss_dt
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
@@ -332,7 +332,7 @@ class MPTModel(nn.Module):
         lambda_f = self.config["model"]["HyraxBaselineCLS"]["lambda_f"]
         lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
         lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
-        loss = lambda_f * loss_f * lambda_b * loss_b * lambda_dt * loss_dt
+        loss = lambda_f * loss_f + lambda_b * loss_b + lambda_dt * loss_dt
 
         return {"loss": loss.item()}
 
