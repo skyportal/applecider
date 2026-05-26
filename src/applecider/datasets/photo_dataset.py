@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from applecider.datasets.oversampler_mixin import OversamplerMixin
-from hyrax.data_sets import HyraxDataset
+from hyrax.datasets import HyraxDataset
 from torch.utils.data import Dataset
 
 
@@ -13,7 +13,7 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         self.data_location = data_location
         self.filenames = sorted(list(Path(self.data_location).glob("*.npz")))
 
-        self.photo_config = config["data_set"]["applecider.datasets.photo_dataset.PhotoEventsDataset"]
+        self.photo_config = config["applecider"]["photo_dataset"]
 
         self.manifest_df = pd.read_csv(self.photo_config["manifest_path"])
         self.manifest_df = self.manifest_df.sort_values("obj_id", inplace=False)
@@ -42,25 +42,15 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
             self.prepare_over_sampling(ideal_class_distribution, class_at_index)
         super().__init__(config)
 
-    def __getitem__(self, idx):
-        # getting happens via the getter methods below
-        pass
-
-    def get_object_id(self, idx):
+    def get_object_id(self, idx) -> str:
         """get unique identifier for a specific index"""
         # Find the row in the manifest ids
-        old_idx = idx
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
-        return self.object_ids[idx]
-
-    def ids(self):
-        for idx in range(len(self)):
-            yield self.get_object_id(idx)
+        return str(self.object_ids[idx])
 
     def get_label(self, idx):
         """get ID label for a specific index"""
-        old_idx = idx
         if self.use_oversampling:
             idx, is_oversampled = self.retrieve_oversampled_index(idx)
         # Find the row in the manifest
@@ -100,29 +90,10 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         # Result is a (L, 7) tensor (L = sequence length)
         return np.concatenate([vec4, one_hot_band], 1)  # (L, 7)
 
-    def get_mean(self, idx):
-        """get feature means from stats file"""
-        return self.st["mean"]
-
-    def get_std(self, idx):
-        """get feature standard deviations from stats file"""
-        return self.st["std"]
-
-    def __len__(self):
-        if self.use_oversampling:
-            return self.total_count_with_oversampling
-        else:
-            return len(self.filenames)
-
     @staticmethod
-    def collate(batch):
-        """custom collate function for photo events dataset"""
-        seqs = []
-        labels = []
-        for i in batch:
-            seqs += [i["data"]["photometry"]]
-            if "label" in i["data"]:
-                labels += [i["data"]["label"]]
+    def collate_photometry(batch):
+        """custom collate function for photometry data"""
+        seqs = [i["photometry"] for i in batch]
 
         lengths = [s.shape[0] for s in seqs]
         max_len = max([257, max(lengths)])
@@ -142,11 +113,22 @@ class PhotoEventsDataset(HyraxDataset, Dataset, OversamplerMixin):
         pad_mask = pad_mask[:, :257]
 
         return {
-            "data": {
-                "photometry": pad,
-                "label": np.array(labels),
-                "pad_mask": pad_mask,
-                "mean": np.array(batch[0]["data"]["mean"]),
-                "std": np.array(batch[0]["data"]["std"]),
-            },
+            "photometry": pad,
+            "pad_mask": pad_mask,
         }
+
+    def get_mean(self, idx):
+        """get feature means from stats file"""
+        # TODO: Double check this reshaping!!!
+        return self.st["mean"].reshape(1, 4)
+
+    def get_std(self, idx):
+        """get feature standard deviations from stats file"""
+        # TODO: Double check this reshaping!!!
+        return self.st["std"].reshape(1, 4)
+
+    def __len__(self):
+        if self.use_oversampling:
+            return self.total_count_with_oversampling
+        else:
+            return len(self.filenames)

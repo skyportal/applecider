@@ -85,7 +85,7 @@ class HyraxBaselineCLS(nn.Module):
             output = F.softmax(output, dim=1)
         return output
 
-    def train_step(self, batch):
+    def train_batch(self, batch):
         """
         This function contains the logic for a single training step. i.e. the
         contents of the inner loop of a ML training process.
@@ -119,8 +119,11 @@ class HyraxBaselineCLS(nn.Module):
         # accuracy, total loss/tot n, any custom metrics
         return {"loss": loss.item(), "num_tdes": np.sum([labels.cpu().numpy() == 4])}
 
+    def infer_batch(self, batch):
+        return self.forward(batch)
+
     @staticmethod
-    def to_tensor(data_dict):
+    def prepare_inputs(data_dict):
         """
         Converts raw data from a dictionary into a PyTorch tensor suitable for the model.
 
@@ -162,7 +165,7 @@ class HyraxBaselineCLS(nn.Module):
 
         # Generate all-false padding mask if not provided, useful for infer step
         # The +1 is to account for the CLS token added in the model.
-        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1] + 1), dtype=bool)
+        false_mask = np.zeros((photo_tensor.shape[0], photo_tensor.shape[1]), dtype=bool)
         return (photo_tensor, false_mask, label_tensor)
 
 
@@ -231,7 +234,7 @@ class MPTModel(nn.Module):
     def forward(self, z):
         return self.head_flux(z), self.head_band(z), self.head_dt(z)
 
-    def train_step(self, batch):
+    def train_batch(self, batch):
         data = batch[0]
         pad = batch[1]
         # import pdb;pdb.set_trace()
@@ -275,13 +278,66 @@ class MPTModel(nn.Module):
         lambda_f = self.config["model"]["HyraxBaselineCLS"]["lambda_f"]
         lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
         lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
-        loss = lambda_f * loss_f * lambda_b * loss_b * lambda_dt * loss_dt
+        loss = lambda_f * loss_f + lambda_b * loss_b + lambda_dt * loss_dt
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
         self.optimizer.step()
 
         return {"loss": loss.item()}
+
+    def validate_batch(self, batch):
+        """This is identical to train_batch but without the backward pass and
+        optimizer step. We can also compute any validation metrics here."""
+        data = batch[0]
+        pad = batch[1]
+        # import pdb;pdb.set_trace()
+        masked_tok = self._mask_batch(data, pad)
+
+        B, L, _ = data.shape
+
+        # project into model dim
+        emb = self.in_proj(data)  # (B, L, d_model)
+        # extract the *continuous* log1p dt feature
+        t = data[..., 0]
+
+        # compute the learned time embedding:
+        te = self.time2vec(t)
+        te = F.dropout(te, p=self.config["model"]["HyraxBaselineCLS"]["dropout"])
+
+        # add it:
+        h_in = emb + te  # (B, L, d_model)
+        # prepend a learned CLS token:
+        tok = self.cls_tok.expand(B, -1, -1)  # (B,1,d_model)
+        h = torch.cat([tok, h_in], dim=1)  # (B, L+1, d_model)
+        pad = torch.cat([pad.new_zeros((B, 1)), pad], 1)
+
+        # encode
+        z_full = self.encoder(h, src_key_padding_mask=pad)  # (B, L+1, d_model)
+        h_masked = z_full[:, 1:, :]  # (B, L, d_model)
+        f_hat = self.head_flux(h_masked)  # (B, L, 1)
+        b_hat = self.head_band(h_masked)  # (B, L, 3)
+        dt_hat = self.head_dt(h_masked)  # (B, L, 1)
+
+        mf = masked_tok.contiguous().view(-1)
+        true_f = data[..., 2].view(-1)
+        loss_f = F.mse_loss(f_hat.view(-1)[mf], true_f[mf])
+        true_b = data[..., 4:7].argmax(-1).view(-1)
+        loss_b = F.cross_entropy(b_hat.view(-1, 3)[mf], true_b[mf])
+        dt_gt = torch.roll(data[..., 1], -1, dims=1)
+        dt_gt[:, -1] = 0.0
+        dt_gt = dt_gt.view(-1)
+        loss_dt = F.mse_loss(dt_hat[..., 0].view(-1)[mf], dt_gt[mf])
+
+        lambda_f = self.config["model"]["HyraxBaselineCLS"]["lambda_f"]
+        lambda_b = self.config["model"]["HyraxBaselineCLS"]["lambda_b"]
+        lambda_dt = self.config["model"]["HyraxBaselineCLS"]["lambda_dt"]
+        loss = lambda_f * loss_f + lambda_b * loss_b + lambda_dt * loss_dt
+
+        return {"loss": loss.item()}
+
+    def infer_batch(self, batch):
+        return self.forward(batch)
 
     def _mask_batch(self, x, pad_mask):
         MASK_P = self.config["model"]["HyraxBaselineCLS"]["mask_p"]
@@ -319,7 +375,7 @@ class MPTModel(nn.Module):
         return masked
 
     @staticmethod
-    def to_tensor(data_dict):
+    def prepare_inputs(data_dict):
         """
         Converts raw data from a dictionary into a PyTorch tensor suitable for the model.
 

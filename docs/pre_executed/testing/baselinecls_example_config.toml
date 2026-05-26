@@ -5,32 +5,33 @@ name = "applecider.models.HyraxBaselineCLS.HyraxBaselineCLS"
 
 [data_loader]
 batch_size = 128
-collate_fn = "applecider.datasets.photo_dataset.collate"
 
-[model_inputs]
-[model_inputs.train.data]
+[data_request]
+[data_request.train.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
 data_location = "../../../data/photo_events/train/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
-[model_inputs.train.data.dataset_config]
+split_fraction = 0.8
+[data_request.train.data.dataset_config.applecider.photo_dataset]
 manifest_path = "../../../data/photo_events/manifest_train.csv"
 
-[model_inputs.validate.data]
-#[model_inputs.dont_use.data]
+[data_request.validate.data]
+#[data_request.dont_use.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
 data_location = "../../../data/photo_events/val/"
 fields = ["photometry", "label", "mean", "std"]
 primary_id_field = "object_id"
-[model_inputs.validate.data.dataset_config]
+split_fraction = 0.2
+[data_request.validate.data.dataset_config.applecider.photo_dataset]
 manifest_path = "../../../data/photo_events/manifest_val.csv"
 
-[model_inputs.infer.data]
+[data_request.infer.data]
 dataset_class = "applecider.datasets.photo_dataset.PhotoEventsDataset"
 data_location = "../../../data/photo_events/test/"
 fields = ["photometry", "mean", "std"]
 primary_id_field = "object_id"
-[model_inputs.infer.data.dataset_config]
+[data_request.infer.data.dataset_config.applecider.photo_dataset]
 manifest_path = "../../../data/photo_events/manifest_test.csv"
 use_oversampling = false
 

@@ -1,18 +1,19 @@
 [model]
 name = "applecider.models.spectranet.SpectraNet"
 
-[model_inputs]
-
-[model_inputs.train.data]
+[data_request.train.data]
 dataset_class = "applecider.datasets.spectra_dataset.SpectraData"
 fields = ["flux", "label", "redshift"]
 data_location = "../../../data/spectra_data/train.pt"
+primary_id_field = "object_id"
+split_fraction = 1.0
 
-[model_inputs.infer.data]
+[data_request.infer.data]
 dataset_class = "applecider.datasets.spectra_dataset.SpectraData"
 fields = ["flux"]
 data_location = "../../../data/spectra_data/test.pt"
 primary_id_field = "object_id"
+split_fraction = 1.0
 
 [train]
 epochs = 1

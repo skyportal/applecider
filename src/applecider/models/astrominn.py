@@ -305,7 +305,7 @@ class AstroMiNN(nn.Module):
     def _calculate_stats(self):
         return sum(self.total_loss) / len(self.total_loss)
 
-    def train_step(self, batch):
+    def train_batch(self, batch):
         _, _, labels = batch
 
         self.this_optimizer.zero_grad()
@@ -325,8 +325,11 @@ class AstroMiNN(nn.Module):
 
         return {"loss": loss}
 
+    def infer_batch(self, batch):
+        return self.forward(batch)
+
     @staticmethod
-    def to_tensor(data_dict: dict) -> tuple:
+    def prepare_inputs(data_dict: dict) -> tuple:
         """Convert input data dictionary to a tuple of numpy arrays for model
         processing.
         """
